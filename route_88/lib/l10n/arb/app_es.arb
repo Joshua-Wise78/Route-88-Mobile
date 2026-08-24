@@ -1,0 +1,7 @@
+{
+    "@@locale": "es",
+    "homeAppBarTitle": "Ruta 88",
+    "@homeAppBarTitle": {
+        "description": "Texto mostrado en la AppBar de la página de inicio"
+    }
+}
