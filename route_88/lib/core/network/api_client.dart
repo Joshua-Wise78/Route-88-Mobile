@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 
+const internalApiKey = String.fromEnvironment('INTERNAL_API_KEY');
+
 class ApiClient {
   ApiClient()
     : dio = Dio(
         BaseOptions(
-          baseUrl: 'https://wise-server.tail904192.ts.net/mobile',
+          baseUrl: 'http://wise-server.tail904182.ts.net:3333/api/mobile',
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
         ),
@@ -21,7 +23,6 @@ class ApiClient {
 class _AuthInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    const internalApiKey = 'API_KEY_HERE';
     options.headers['Authorization'] = 'Bearer $internalApiKey';
     super.onRequest(options, handler);
   }
