@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:route_88/core/network/api_client.dart';
+import 'package:route_88/core/network/models/paginated_response.dart';
 import 'package:route_88/features/route88/models/incident.dart';
 
 class IncidentRepository {
@@ -13,7 +14,7 @@ class IncidentRepository {
     required double radiusMiles,
   }) async {
     try {
-      final response = await _apiClient.dio.get<List<dynamic>>(
+      final response = await _apiClient.dio.get<Map<String, dynamic>>(
         '/incidents',
         queryParameters: {
           'latitude': latitude,
@@ -22,10 +23,13 @@ class IncidentRepository {
         },
       );
 
-      final data = response.data ?? [];
-      return data
-          .map((json) => Incident.fromJson(json as Map<String, dynamic>))
-          .toList();
+      final data = response.data ?? <String, dynamic>{};
+      final paginatedResponse = PaginatedResponse<Incident>.fromJson(
+        data,
+        Incident.fromJson,
+      );
+
+      return paginatedResponse.results;
     } on DioException catch (e) {
       throw Exception('Failed to fetch incidents: ${e.message}');
     }

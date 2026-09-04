@@ -1,36 +1,19 @@
-class IncidentResponse {
-  IncidentResponse({
-    required this.totalPageCount,
-    required this.totalResultCount,
-    required this.results,
-  });
+import 'package:route_88/features/route88/models/base.dart' show Base, Link;
 
-  factory IncidentResponse.fromJson(Map<String, dynamic> json) {
-    return IncidentResponse(
-      totalPageCount: json['totalPageCount'] as int? ?? 0,
-      totalResultCount: json['totalResultCount'] as int? ?? 0,
-      results:
-          (json['results'] as List<dynamic>?)
-              ?.map((e) => Incident.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-    );
-  }
 
-  final int totalPageCount;
-  final int totalResultCount;
-  final List<Incident> results;
-}
-
-class Incident {
+class Incident extends Base {
   Incident({
-    required this.id,
-    required this.latitude,
-    required this.longitude,
-    required this.location,
-    required this.description,
-    required this.category,
+    required super.id,
+    required super.latitude,
+    required super.longitude,
+    required super.location,
+    required super.description,
+    required super.category,
+    required super.direction,
+    required super.routeName,
     required this.roadStatus,
+    super.link,
+    this.roadClosureDetail,
   });
 
   factory Incident.fromJson(Map<String, dynamic> json) {
@@ -41,15 +24,50 @@ class Incident {
       location: json['location'] as String? ?? '',
       description: json['description'] as String? ?? '',
       category: json['category'] as String? ?? '',
+      direction: json['direction'] as String? ?? '',
+      routeName: json['routeName'] as String? ?? '',
+      link: json['link'] != null
+          ? Link.fromJson(json['link'] as Map<String, dynamic>)
+          : null,
       roadStatus: json['roadStatus'] as String? ?? '',
+      roadClosureDetail: json['roadClosureDetail'] != null
+          ? RoadClosureDetail.fromJson(
+              json['roadClosureDetail'] as Map<String, dynamic>)
+          : null,
     );
   }
 
-  final String id;
-  final double latitude;
-  final double longitude;
-  final String location;
-  final String description;
-  final String category;
   final String roadStatus;
+  final RoadClosureDetail? roadClosureDetail;
+}
+
+class RoadClosureDetail {
+  RoadClosureDetail({
+    required this.closureStartLocation,
+    required this.closureEndLocation,
+    required this.polyline,
+  });
+
+  factory RoadClosureDetail.fromJson(Map<String, dynamic> json) {
+    return RoadClosureDetail(
+      closureStartLocation: (json['closureStartLocation'] as List<dynamic>?)
+              ?.map((e) => (e as num).toDouble())
+              .toList() ??
+          [],
+      closureEndLocation: (json['closureEndLocation'] as List<dynamic>?)
+              ?.map((e) => (e as num).toDouble())
+              .toList() ??
+          [],
+      polyline: (json['polyline'] as List<dynamic>?)
+              ?.map((e) => (e as List<dynamic>)
+                  .map((e2) => (e2 as num).toDouble())
+                  .toList())
+              .toList() ??
+          [],
+    );
+  }
+
+  final List<double> closureStartLocation;
+  final List<double> closureEndLocation;
+  final List<List<double>> polyline;
 }
