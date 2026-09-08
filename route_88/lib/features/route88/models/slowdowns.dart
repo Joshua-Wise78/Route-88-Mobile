@@ -10,6 +10,7 @@ class Slowdown extends Base {
     super.category,
     super.direction,
     super.routeName,
+    super.link,
     this.normalMPH,
     this.currentMPH,
   });
@@ -24,6 +25,9 @@ class Slowdown extends Base {
       category: json['category'] as String?,
       direction: json['direction'] as String?,
       routeName: json['routeName'] as String?,
+      link: json['link'] != null
+          ? Link.fromJson(json['link'] as Map<String, dynamic>)
+          : null,
       normalMPH: (json['normalMPH'] as num?)?.toInt(),
       currentMPH: (json['currentMPH'] as num?)?.toInt(),
     );
