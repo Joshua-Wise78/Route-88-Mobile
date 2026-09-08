@@ -23,11 +23,11 @@ class Base {
     required this.id,
     required this.latitude,
     required this.longitude,
-    required this.location,
-    required this.description,
-    required this.category,
-    required this.direction,
-    required this.routeName,
+    this.location,
+    this.description,
+    this.category,
+    this.direction,
+    this.routeName,
     this.link,
   });
 
@@ -36,12 +36,11 @@ class Base {
       id: json['id'] as String? ?? '',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
-      location: json['location'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      category: json['category'] as String? ?? '',
-      direction: json['direction'] as String? ?? '',
-      routeName: json['routeName'] as String? ?? '',
-
+      location: json['location'] as String?,
+      description: json['description'] as String?,
+      category: json['category'] as String?,
+      direction: json['direction'] as String?,
+      routeName: json['routeName'] as String?,
       link: json['link'] != null
           ? Link.fromJson(json['link'] as Map<String, dynamic>)
           : null,
@@ -51,10 +50,10 @@ class Base {
   final String id;
   final double latitude;
   final double longitude;
-  final String location;
-  final String description;
-  final String category;
-  final String direction;
-  final String routeName;
+  final String? location;
+  final String? description;
+  final String? category;
+  final String? direction;
+  final String? routeName;
   final Link? link;
 }

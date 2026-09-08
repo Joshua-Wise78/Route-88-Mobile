@@ -1,17 +1,16 @@
 import 'package:route_88/features/route88/models/base.dart' show Base, Link;
 
-
 class Incident extends Base {
   Incident({
     required super.id,
     required super.latitude,
     required super.longitude,
-    required super.location,
-    required super.description,
-    required super.category,
-    required super.direction,
-    required super.routeName,
-    required this.roadStatus,
+    super.location,
+    super.description,
+    super.category,
+    super.direction,
+    super.routeName,
+    this.roadStatus,
     super.link,
     this.roadClosureDetail,
   });
@@ -21,23 +20,24 @@ class Incident extends Base {
       id: json['id'] as String? ?? '',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
-      location: json['location'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      category: json['category'] as String? ?? '',
-      direction: json['direction'] as String? ?? '',
-      routeName: json['routeName'] as String? ?? '',
+      location: json['location'] as String?,
+      description: json['description'] as String?,
+      category: json['category'] as String?,
+      direction: json['direction'] as String?,
+      routeName: json['routeName'] as String?,
       link: json['link'] != null
           ? Link.fromJson(json['link'] as Map<String, dynamic>)
           : null,
-      roadStatus: json['roadStatus'] as String? ?? '',
+      roadStatus: json['roadStatus'] as String?,
       roadClosureDetail: json['roadClosureDetail'] != null
           ? RoadClosureDetail.fromJson(
-              json['roadClosureDetail'] as Map<String, dynamic>)
+              json['roadClosureDetail'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
 
-  final String roadStatus;
+  final String? roadStatus;
   final RoadClosureDetail? roadClosureDetail;
 }
 
@@ -50,18 +50,23 @@ class RoadClosureDetail {
 
   factory RoadClosureDetail.fromJson(Map<String, dynamic> json) {
     return RoadClosureDetail(
-      closureStartLocation: (json['closureStartLocation'] as List<dynamic>?)
+      closureStartLocation:
+          (json['closureStartLocation'] as List<dynamic>?)
               ?.map((e) => (e as num).toDouble())
               .toList() ??
           [],
-      closureEndLocation: (json['closureEndLocation'] as List<dynamic>?)
+      closureEndLocation:
+          (json['closureEndLocation'] as List<dynamic>?)
               ?.map((e) => (e as num).toDouble())
               .toList() ??
           [],
-      polyline: (json['polyline'] as List<dynamic>?)
-              ?.map((e) => (e as List<dynamic>)
-                  .map((e2) => (e2 as num).toDouble())
-                  .toList())
+      polyline:
+          (json['polyline'] as List<dynamic>?)
+              ?.map(
+                (e) => (e as List<dynamic>)
+                    .map((e2) => (e2 as num).toDouble())
+                    .toList(),
+              )
               .toList() ??
           [],
     );
