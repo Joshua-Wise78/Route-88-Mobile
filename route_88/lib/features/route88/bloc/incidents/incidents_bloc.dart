@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
-import 'package:route_88/features/route88/bloc/incidents_event.dart';
-import 'package:route_88/features/route88/bloc/incidents_state.dart';
+import 'package:route_88/features/route88/bloc/incidents/incidents_event.dart';
+import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
 import 'package:route_88/features/route88/domain/usecases/get_incidents_usecase.dart';
 
 class IncidentsBloc extends Bloc<IncidentsEvent, IncidentsState> {
