@@ -3,16 +3,16 @@ import 'package:route_88/core/network/api_client.dart';
 import 'package:route_88/data/models/api_status.dart';
 
 class SystemRepository {
-  SystemRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+  SystemRepository({required this.apiClient});
 
-  final ApiClient _apiClient;
+  final ApiClient apiClient;
 
   Future<ApiStatus> getStatus() async {
     try {
-      final response = await _apiClient.dio.get<Map<String, dynamic>>(
+      final response = await apiClient.dio.get<Map<String, dynamic>>(
         '/status',
       );
-      return ApiStatus.fromJson(response.data!);
+      return ApiStatus.fromJson(response.data ?? <String, dynamic>{});
     } on DioException catch (e) {
       throw Exception('Failed to fetch status: ${e.message}');
     }

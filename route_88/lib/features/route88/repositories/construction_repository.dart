@@ -1,37 +1,39 @@
 import 'package:dio/dio.dart';
 import 'package:route_88/core/network/api_client.dart';
 import 'package:route_88/core/network/models/paginated_response.dart';
-import 'package:route_88/features/route88/models/incident.dart';
+import 'package:route_88/features/route88/models/construction.dart';
 
-class IncidentRepository {
-  IncidentRepository({required this.apiClient});
+class ConstructionRepository {
+  ConstructionRepository({required this.apiClient});
 
   final ApiClient apiClient;
 
-  Future<List<Incident>> getIncidents({
+  Future<List<Construction>> getConstruction({
     double? latitude,
     double? longitude,
     double? radiusMiles,
+    List<List<double>>? waypoints,
   }) async {
     try {
       final response = await apiClient.dio.get<Map<String, dynamic>>(
-        '/incidents',
+        '/construction',
         queryParameters: {
           'latitude': ?latitude,
           'longitude': ?longitude,
           'radiusMiles': ?radiusMiles,
+          'waypoints': ?waypoints,
         },
       );
 
       final data = response.data ?? <String, dynamic>{};
-      final paginatedResponse = PaginatedResponse<Incident>.fromJson(
+      final paginatedResponse = PaginatedResponse<Construction>.fromJson(
         data,
-        Incident.fromJson,
+        Construction.fromJson,
       );
 
       return paginatedResponse.results;
     } on DioException catch (e) {
-      throw Exception('Failed to fetch incidents: ${e.message}');
+      throw Exception('Failed to fetch construction: ${e.message}');
     }
   }
 }
