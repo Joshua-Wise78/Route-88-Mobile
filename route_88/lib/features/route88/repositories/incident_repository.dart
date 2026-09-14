@@ -4,22 +4,22 @@ import 'package:route_88/core/network/models/paginated_response.dart';
 import 'package:route_88/features/route88/models/incident.dart';
 
 class IncidentRepository {
-  IncidentRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+  IncidentRepository({required this.apiClient});
 
-  final ApiClient _apiClient;
+  final ApiClient apiClient;
 
   Future<List<Incident>> getIncidents({
-    required double latitude,
-    required double longitude,
-    required double radiusMiles,
+    double? latitude,
+    double? longitude,
+    double? radiusMiles,
   }) async {
     try {
-      final response = await _apiClient.dio.get<Map<String, dynamic>>(
+      final response = await apiClient.dio.get<Map<String, dynamic>>(
         '/incidents',
         queryParameters: {
-          'latitude': latitude,
-          'longitude': longitude,
-          'radiusMiles': radiusMiles,
+          'latitude': ?latitude,
+          'longitude': ?longitude,
+          'radiusMiles': ?radiusMiles,
         },
       );
 

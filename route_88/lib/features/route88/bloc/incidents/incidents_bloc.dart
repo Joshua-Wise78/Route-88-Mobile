@@ -5,9 +5,8 @@ import 'package:route_88/features/route88/domain/usecases/get_incidents_usecase.
 
 class IncidentsBloc extends Bloc<IncidentsEvent, IncidentsState> {
   IncidentsBloc({
-    required GetIncidentsUseCase getIncidentsUseCase,
-  })  : _getIncidentsUseCase = getIncidentsUseCase,
-        super(const IncidentInitial()) {
+    required this._getIncidentsUseCase,
+  })  : super(const IncidentInitial()) {
     on<IncidentsRequested>(_onIncidentsRequested);
   }
 

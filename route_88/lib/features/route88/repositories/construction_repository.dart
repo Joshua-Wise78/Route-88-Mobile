@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:route_88/core/network/api_client.dart';
 import 'package:route_88/core/network/models/paginated_response.dart';
-import 'package:route_88/features/route88/models/slowdowns.dart';
+import 'package:route_88/features/route88/models/construction.dart';
 
-class SlowdownRepository {
-  SlowdownRepository({required this.apiClient});
+class ConstructionRepository {
+  ConstructionRepository({required this.apiClient});
 
   final ApiClient apiClient;
 
-  Future<List<Slowdown>> getSlowdowns({
+  Future<List<Construction>> getConstruction({
     double? latitude,
     double? longitude,
     double? radiusMiles,
@@ -16,7 +16,7 @@ class SlowdownRepository {
   }) async {
     try {
       final response = await apiClient.dio.get<Map<String, dynamic>>(
-        '/slowdowns',
+        '/construction',
         queryParameters: {
           'latitude': ?latitude,
           'longitude': ?longitude,
@@ -26,14 +26,14 @@ class SlowdownRepository {
       );
 
       final data = response.data ?? <String, dynamic>{};
-      final paginatedResponse = PaginatedResponse<Slowdown>.fromJson(
+      final paginatedResponse = PaginatedResponse<Construction>.fromJson(
         data,
-        Slowdown.fromJson,
+        Construction.fromJson,
       );
 
       return paginatedResponse.results;
     } on DioException catch (e) {
-      throw Exception('Failed to fetch slowdowns: ${e.message}');
+      throw Exception('Failed to fetch construction: ${e.message}');
     }
   }
 }

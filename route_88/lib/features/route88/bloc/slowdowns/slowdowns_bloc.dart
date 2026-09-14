@@ -5,9 +5,8 @@ import 'package:route_88/features/route88/repositories/slowdown_repository.dart'
 
 class SlowdownsBloc extends Bloc<SlowdownsEvent, SlowdownsState> {
   SlowdownsBloc({
-    required SlowdownRepository repository,
-  })  : _repository = repository,
-        super(const SlowdownsInitial()) {
+    required this._repository,
+  })  : super(const SlowdownsInitial()) {
     on<SlowdownsRequested>(_onSlowdownsRequested);
   }
 
@@ -28,7 +27,7 @@ class SlowdownsBloc extends Bloc<SlowdownsEvent, SlowdownsState> {
       );
 
       emit(SlowdownsLoaded(slowdowns));
-    } catch (e) {
+    } on Exception catch (e) {
       emit(SlowdownsError(e.toString()));
     }
   }

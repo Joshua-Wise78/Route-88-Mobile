@@ -6,9 +6,9 @@ class GetIncidentsUseCase {
   final IncidentRepository _repository;
 
   Future<List<Incident>> call({
-    required double latitude,
-    required double longitude,
-    required double radiusMiles,
+    double? latitude,
+    double? longitude,
+    double? radiusMiles,
   }) async {
     return _repository.getIncidents(
       latitude: latitude,
