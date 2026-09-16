@@ -17,7 +17,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    
+
     // Hardcoded Columbus, OH coordinates for testing data fetching
     const testLat = 39.9612;
     const testLon = -83.0019;
@@ -45,12 +45,12 @@ class HomePage extends StatelessWidget {
             // Incidents Section
             ElevatedButton(
               onPressed: () => context.read<IncidentsBloc>().add(
-                    const IncidentsRequested(
-                      latitude: testLat,
-                      longitude: testLon,
-                      radiusMiles: testRadius,
-                    ),
-                  ),
+                const IncidentsRequested(
+                  latitude: testLat,
+                  longitude: testLon,
+                  radiusMiles: testRadius,
+                ),
+              ),
               child: const Text('Fetch Incidents'),
             ),
             BlocBuilder<IncidentsBloc, IncidentsState>(
@@ -60,7 +60,10 @@ class HomePage extends StatelessWidget {
                 } else if (state is IncidentsLoaded) {
                   return Text('Loaded ${state.incidents.length} Incidents');
                 } else if (state is IncidentsError) {
-                  return Text('Error: ${state.message}', style: const TextStyle(color: Colors.red));
+                  return Text(
+                    'Error: ${state.message}',
+                    style: const TextStyle(color: Colors.red),
+                  );
                 }
                 return const Text('No data fetched yet.');
               },
@@ -70,12 +73,12 @@ class HomePage extends StatelessWidget {
             // Construction Section
             ElevatedButton(
               onPressed: () => context.read<ConstructionBloc>().add(
-                    const ConstructionRequested(
-                      latitude: testLat,
-                      longitude: testLon,
-                      radiusMiles: testRadius,
-                    ),
-                  ),
+                const ConstructionRequested(
+                  latitude: testLat,
+                  longitude: testLon,
+                  radiusMiles: testRadius,
+                ),
+              ),
               child: const Text('Fetch Construction'),
             ),
             BlocBuilder<ConstructionBloc, ConstructionState>(
@@ -83,9 +86,14 @@ class HomePage extends StatelessWidget {
                 if (state is ConstructionLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is ConstructionLoaded) {
-                  return Text('Loaded ${state.construction.length} Construction Zones');
+                  return Text(
+                    'Loaded ${state.construction.length} Construction Zones',
+                  );
                 } else if (state is ConstructionError) {
-                  return Text('Error: ${state.message}', style: const TextStyle(color: Colors.red));
+                  return Text(
+                    'Error: ${state.message}',
+                    style: const TextStyle(color: Colors.red),
+                  );
                 }
                 return const Text('No data fetched yet.');
               },
@@ -95,12 +103,12 @@ class HomePage extends StatelessWidget {
             // Slowdowns Section
             ElevatedButton(
               onPressed: () => context.read<SlowdownsBloc>().add(
-                    const SlowdownsRequested(
-                      latitude: testLat,
-                      longitude: testLon,
-                      radiusMiles: testRadius,
-                    ),
-                  ),
+                const SlowdownsRequested(
+                  latitude: testLat,
+                  longitude: testLon,
+                  radiusMiles: testRadius,
+                ),
+              ),
               child: const Text('Fetch Slowdowns'),
             ),
             BlocBuilder<SlowdownsBloc, SlowdownsState>(
@@ -110,7 +118,10 @@ class HomePage extends StatelessWidget {
                 } else if (state is SlowdownsLoaded) {
                   return Text('Loaded ${state.slowdowns.length} Slowdowns');
                 } else if (state is SlowdownsError) {
-                  return Text('Error: ${state.message}', style: const TextStyle(color: Colors.red));
+                  return Text(
+                    'Error: ${state.message}',
+                    style: const TextStyle(color: Colors.red),
+                  );
                 }
                 return const Text('No data fetched yet.');
               },
