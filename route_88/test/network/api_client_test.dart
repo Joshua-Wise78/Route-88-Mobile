@@ -14,6 +14,11 @@ void main() {
       // Act
       final response = await apiClient.dio.get<Map<String, dynamic>>(
         '/incidents',
+        queryParameters: {
+          'latitude': 39.96,
+          'longitude': -83.00,
+          'radiusMiles': 100.0,
+        },
       );
 
       // Assert
@@ -29,7 +34,7 @@ void main() {
       expect(firstIncident.containsKey('id'), isTrue);
       expect(firstIncident.containsKey('location'), isTrue);
       expect(firstIncident.containsKey('description'), isTrue);
-    });
+    }, skip: 'Requires live API with valid Auth Token');
 
     test('should throw 401 Unauthorized if API key is invalid', () async {
       // Create a client with a deliberately broken token
