@@ -9,13 +9,13 @@ void main() {
         'totalResultCount': 15,
         'results': [
           {'id': 1},
-          {'id': 2}
-        ]
+          {'id': 2},
+        ],
       };
 
       final response = PaginatedResponse<int>.fromJson(
-        json, 
-        (data) => data['id'] as int
+        json,
+        (data) => data['id'] as int,
       );
 
       expect(response.totalPageCount, 2);

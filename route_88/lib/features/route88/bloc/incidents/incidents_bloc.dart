@@ -6,7 +6,7 @@ import 'package:route_88/features/route88/domain/usecases/get_incidents_usecase.
 class IncidentsBloc extends Bloc<IncidentsEvent, IncidentsState> {
   IncidentsBloc({
     required this._getIncidentsUseCase,
-  })  : super(const IncidentInitial()) {
+  }) : super(const IncidentInitial()) {
     on<IncidentsRequested>(_onIncidentsRequested);
   }
 
@@ -23,7 +23,7 @@ class IncidentsBloc extends Bloc<IncidentsEvent, IncidentsState> {
         longitude: event.longitude,
         radiusMiles: event.radiusMiles,
       );
-      
+
       emit(IncidentsLoaded(incidents));
     } on Exception catch (e) {
       emit(IncidentsError(e.toString()));

@@ -5,6 +5,7 @@ import 'package:route_88/core/network/api_client.dart';
 import 'package:route_88/data/repositories/system_repository.dart';
 
 class MockApiClient extends Mock implements ApiClient {}
+
 class MockDio extends Mock implements Dio {}
 
 void main() {

@@ -17,8 +17,11 @@ void main() {
           'description': 'Zone A',
           'startLocation': [35.0, -80.0],
           'endLocation': [35.1, -80.1],
-          'polyline': [[35.0, -80.0], [35.1, -80.1]]
-        }
+          'polyline': [
+            [35.0, -80.0],
+            [35.1, -80.1],
+          ],
+        },
       };
 
       final construction = Construction.fromJson(json);
@@ -54,12 +57,12 @@ void main() {
         'endDate': '2023-12-31',
         'detourRoute': {
           'roadName': 'Alt St',
-          'startLocation': [35.0, -80.0]
-        }
+          'startLocation': [35.0, -80.0],
+        },
       };
-      
+
       final detour = ConstructionDetour.fromJson(json);
-      
+
       expect(detour.name, 'Detour 1');
       expect(detour.detourRoute?.roadName, 'Alt St');
       expect(detour.detourRoute?.startLocation, [35.0, -80.0]);
