@@ -3,39 +3,32 @@ import 'package:route_88/features/routing/models/coordinate.dart';
 
 class Place extends Equatable {
   const Place({
-    required this.name,
+    required this.id,
+    required this.displayName,
     required this.coordinate,
+    this.street,
     this.city,
-    this.state,
-    this.country,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
-    final properties = json['properties'] as Map<String, dynamic>;
-    final geometry = json['geometry'] as Map<String, dynamic>;
-    final coords = geometry['coordinates'] as List<dynamic>;
-
     return Place(
-      name: properties['name'] as String? ?? 'Unknown',
-      city: properties['city'] as String?,
-      state: properties['state'] as String?,
-      country: properties['country'] as String?,
+      id: json['id'].toString(),
+      displayName: json['displayName'] as String? ?? 'Unknown',
+      street: json['street'] as String?,
+      city: json['city'] as String?,
       coordinate: Coordinate(
-        lng: (coords[0] as num).toDouble(),
-        lat: (coords[1] as num).toDouble(),
+        lat: (json['lat'] as num).toDouble(),
+        lng: (json['lon'] as num).toDouble(),
       ),
     );
   }
 
-  final String name;
+  final String id;
+  final String displayName;
+  final String? street;
   final String? city;
-  final String? state;
-  final String? country;
   final Coordinate coordinate;
 
-  String get displayName =>
-      [name, city, state].where((e) => e != null).join(', ');
-
   @override
-  List<Object?> get props => [name, city, state, country, coordinate];
+  List<Object?> get props => [id, displayName, street, city, coordinate];
 }
