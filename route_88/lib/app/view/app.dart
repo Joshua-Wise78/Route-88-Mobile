@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:route_88/features/home/view/home_page.dart';
+import 'package:route_88/features/map/map.dart';
 import 'package:route_88/l10n/l10n.dart';
 
 class App extends StatelessWidget {
@@ -16,7 +16,7 @@ class App extends StatelessWidget {
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const HomePage(),
+      home: const MapPage(),
     );
   }
 }
