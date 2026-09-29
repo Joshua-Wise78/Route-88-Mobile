@@ -20,33 +20,47 @@ void main() {
     blocTest<IncidentsBloc, IncidentsState>(
       'emits [IncidentsLoading, IncidentsLoaded] when request succeeds',
       build: () {
-        when(() => mockUseCase.call(
-              latitude: any(named: 'latitude'),
-              longitude: any(named: 'longitude'),
-              radiusMiles: any(named: 'radiusMiles'),
-            )).thenAnswer((_) async => [Incident(id: '1', latitude: 35, longitude: -80)]);
-            
+        when(
+          () => mockUseCase.call(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            radiusMiles: any(named: 'radiusMiles'),
+          ),
+        ).thenAnswer(
+          (_) async => [Incident(id: '1', latitude: 35, longitude: -80)],
+        );
+
         return IncidentsBloc(getIncidentsUseCase: mockUseCase);
       },
-      act: (bloc) => bloc.add(const IncidentsRequested(latitude: 35, longitude: -80, radiusMiles: 10)),
+      act: (bloc) => bloc.add(
+        const IncidentsRequested(latitude: 35, longitude: -80, radiusMiles: 10),
+      ),
       expect: () => [
         isA<IncidentsLoading>(),
-        isA<IncidentsLoaded>().having((state) => state.incidents.length, 'length', 1),
+        isA<IncidentsLoaded>().having(
+          (state) => state.incidents.length,
+          'length',
+          1,
+        ),
       ],
     );
 
     blocTest<IncidentsBloc, IncidentsState>(
       'emits [IncidentsLoading, IncidentsError] when request fails',
       build: () {
-        when(() => mockUseCase.call(
-              latitude: any(named: 'latitude'),
-              longitude: any(named: 'longitude'),
-              radiusMiles: any(named: 'radiusMiles'),
-            )).thenThrow(Exception('Failed to fetch'));
-            
+        when(
+          () => mockUseCase.call(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            radiusMiles: any(named: 'radiusMiles'),
+          ),
+        ).thenThrow(Exception('Failed to fetch'));
+
         return IncidentsBloc(getIncidentsUseCase: mockUseCase);
       },
-      act: (bloc) => bloc.add(const IncidentsRequested(latitude: 35, longitude: -80, radiusMiles: 10)),
+      act: (bloc) => bloc.add(
+        const IncidentsRequested(latitude: 35, longitude: -80, radiusMiles: 10),
+      ),
       expect: () => [
         isA<IncidentsLoading>(),
         isA<IncidentsError>(),

@@ -20,11 +20,11 @@ void main() {
         'latitude': 35.0,
         'longitude': -80.0,
         'location': 'Main St',
-        'link': {'href': '/api/1', 'rel': 'self'}
+        'link': {'href': '/api/1', 'rel': 'self'},
       };
-      
+
       final baseModel = Base.fromJson(json);
-      
+
       expect(baseModel.id, '1');
       expect(baseModel.latitude, 35.0);
       expect(baseModel.location, 'Main St');
@@ -34,7 +34,7 @@ void main() {
     test('fromJson handles nulls gracefully', () {
       final json = <String, dynamic>{};
       final baseModel = Base.fromJson(json);
-      
+
       expect(baseModel.id, '');
       expect(baseModel.latitude, 0.0);
       expect(baseModel.longitude, 0.0);
