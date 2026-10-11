@@ -12,17 +12,38 @@ class RouteStep extends Equatable {
   });
 
   factory RouteStep.fromJson(Map<String, dynamic> json) {
-    final loc = json['location'] as Map<String, dynamic>;
+    final loc = json['location'];
+    final Coordinate parsedLocation;
+    if (loc is Map<String, dynamic>) {
+      parsedLocation = Coordinate(
+        lat: (loc['lat'] as num?)?.toDouble() ?? 0.0,
+        lng: ((loc['lon'] ?? loc['lng']) as num?)?.toDouble() ?? 0.0,
+      );
+    } else if (loc is List && loc.length >= 2) {
+      parsedLocation = Coordinate(
+        lat: (loc[1] as num?)?.toDouble() ?? 0.0,
+        lng: (loc[0] as num?)?.toDouble() ?? 0.0,
+      );
+    } else {
+      parsedLocation = const Coordinate(lat: 0, lng: 0);
+    }
+
+    final distance = (json['distancemeters'] ??
+            json['distanceMeters'] ??
+            json['distance']) as num? ??
+        0.0;
+    final duration =
+        (json['durationSeconds'] ?? json['duration']) as num? ?? 0.0;
+
     return RouteStep(
-      instruction: json['instruction'] as String,
-      distanceMeters: (json['distancemeters'] as num).toDouble(),
-      durationSeconds: (json['durationSeconds'] as num).toDouble(),
-      location: Coordinate(
-        lat: (loc['lat'] as num).toDouble(),
-        lng: (loc['lon'] as num).toDouble(),
-      ),
-      maneuverType: json['manueverType'] as String,
-      maneuverModifier: json['manueverModifier'] as String?,
+      instruction: json['instruction'] as String? ?? '',
+      distanceMeters: distance.toDouble(),
+      durationSeconds: duration.toDouble(),
+      location: parsedLocation,
+      maneuverType:
+          ((json['manueverType'] ?? json['maneuverType']) as String?) ?? '',
+      maneuverModifier:
+          (json['manueverModifier'] ?? json['maneuverModifier']) as String?,
     );
   }
 
@@ -33,13 +54,43 @@ class RouteStep extends Equatable {
   final String maneuverType;
   final String? maneuverModifier;
 
+  RouteStep copyWith({
+    String? instruction,
+    double? distanceMeters,
+    double? durationSeconds,
+    Coordinate? location,
+    String? maneuverType,
+    String? maneuverModifier,
+  }) {
+    return RouteStep(
+      instruction: instruction ?? this.instruction,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      location: location ?? this.location,
+      maneuverType: maneuverType ?? this.maneuverType,
+      maneuverModifier: maneuverModifier ?? this.maneuverModifier,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'instruction': instruction,
+    'distancemeters': distanceMeters,
+    'durationSeconds': durationSeconds,
+    'location': {
+      'lat': location.lat,
+      'lon': location.lng,
+    },
+    'manueverType': maneuverType,
+    if (maneuverModifier != null) 'manueverModifier': maneuverModifier,
+  };
+
   @override
   List<Object?> get props => [
-    instruction,
-    distanceMeters,
-    durationSeconds,
-    location,
-    maneuverType,
-    maneuverModifier,
-  ];
+        instruction,
+        distanceMeters,
+        durationSeconds,
+        location,
+        maneuverType,
+        maneuverModifier,
+      ];
 }
