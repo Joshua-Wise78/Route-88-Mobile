@@ -9,6 +9,8 @@ import 'package:route_88/features/route88/domain/usecases/get_incidents_usecase.
 import 'package:route_88/features/route88/repositories/construction_repository.dart';
 import 'package:route_88/features/route88/repositories/incident_repository.dart';
 import 'package:route_88/features/route88/repositories/slowdown_repository.dart';
+import 'package:route_88/features/routing/bloc/routing_bloc.dart';
+import 'package:route_88/features/routing/repositories/routing_repository.dart';
 import 'package:route_88/l10n/l10n.dart';
 
 class App extends StatelessWidget {
@@ -29,6 +31,9 @@ class App extends StatelessWidget {
         RepositoryProvider(
           create: (context) => ConstructionRepository(apiClient: _apiClient),
         ),
+        RepositoryProvider(
+          create: (context) => RoutingRepository(apiClient: _apiClient),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -47,6 +52,11 @@ class App extends StatelessWidget {
           BlocProvider(
             create: (context) => ConstructionBloc(
               repository: context.read<ConstructionRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => RoutingBloc(
+              routingRepository: context.read<RoutingRepository>(),
             ),
           ),
         ],

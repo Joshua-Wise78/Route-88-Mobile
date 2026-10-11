@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:route_88/core/network/api_client.dart';
 import 'package:route_88/features/routing/models/coordinate.dart';
 import 'package:route_88/features/routing/models/place.dart';
@@ -24,8 +25,11 @@ class RoutingRepository {
             .toList();
       }
       return [];
-    } catch (e) {
-      rethrow;
+    } on DioException catch (e) {
+      final errorMsg = e.response?.data is Map<String, dynamic>
+          ? (e.response?.data as Map<String, dynamic>)['error'] as String?
+          : null;
+      throw Exception(errorMsg ?? 'Failed to search places: ${e.message}');
     }
   }
 
@@ -49,8 +53,11 @@ class RoutingRepository {
       throw Exception(
         'Empty or failed response from backend route calculation',
       );
-    } catch (e) {
-      rethrow;
+    } on DioException catch (e) {
+      final errorMsg = e.response?.data is Map<String, dynamic>
+          ? (e.response?.data as Map<String, dynamic>)['error'] as String?
+          : null;
+      throw Exception(errorMsg ?? 'Failed to calculate route: ${e.message}');
     }
   }
 }
