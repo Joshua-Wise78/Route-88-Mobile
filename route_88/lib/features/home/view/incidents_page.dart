@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
+import 'package:route_88/features/route88/bloc/incidents/incidents_event.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
 
 class IncidentsPage extends StatelessWidget {
@@ -9,6 +10,11 @@ class IncidentsPage extends StatelessWidget {
 
   static const Color primaryColor = Color(0xFF123B66);
   static const Color backgroundColor = Color(0xFFF5F7FA);
+
+  // Temporary Columbus coordinates, matching HomePage.
+  static const double testLat = 39.9612;
+  static const double testLon = -83.0019;
+  static const double testRadius = 50;
 
   @override
   Widget build(BuildContext context) {
@@ -39,19 +45,19 @@ class IncidentsPage extends StatelessWidget {
 
           // Error state
           if (state is IncidentsError) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.wifi_off_rounded,
                       size: 64,
                       color: primaryColor,
                     ),
-                    SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: 16),
+                    const Text(
                       'Unable to Load Incidents',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -60,14 +66,36 @@ class IncidentsPage extends StatelessWidget {
                         color: primaryColor,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       'Traffic information is temporarily unavailable. '
-                      'Please try again later.',
+                      'Please try again.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.read<IncidentsBloc>().add(
+                          const IncidentsRequested(
+                            latitude: testLat,
+                            longitude: testLon,
+                            radiusMiles: testRadius,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -180,4 +208,3 @@ class IncidentsPage extends StatelessWidget {
     );
   }
 }
-
