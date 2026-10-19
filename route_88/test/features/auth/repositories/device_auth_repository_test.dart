@@ -5,6 +5,7 @@ import 'package:route_88/core/network/api_client.dart';
 import 'package:route_88/features/auth/repositories/device_auth_repository.dart';
 
 class MockApiClient extends Mock implements ApiClient {}
+
 class MockDio extends Mock implements Dio {}
 
 void main() {
@@ -22,22 +23,28 @@ void main() {
     });
 
     test('registerDevice returns true on success', () async {
-      when(() => mockDio.post<Map<String, dynamic>>(
-            any(), 
-            data: any(named: 'data'),
-          )).thenAnswer((_) async => Response(
-                requestOptions: RequestOptions(path: '/register'),
-                data: {'success': true},
-                statusCode: 200,
-              ));
+      when(
+        () => mockDio.post<Map<String, dynamic>>(
+          any(),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: '/register'),
+          data: {'success': true},
+          statusCode: 200,
+        ),
+      );
 
       final result = await repository.registerDevice('device_123');
 
       expect(result, isTrue);
-      verify(() => mockDio.post<Map<String, dynamic>>(
-        '/register',
-        data: {'deviceId': 'device_123'},
-      )).called(1);
+      verify(
+        () => mockDio.post<Map<String, dynamic>>(
+          '/register',
+          data: {'deviceId': 'device_123'},
+        ),
+      ).called(1);
     });
   });
 }

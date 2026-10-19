@@ -17,9 +17,9 @@ class IncidentRepository {
       final response = await apiClient.dio.get<Map<String, dynamic>>(
         '/incidents',
         queryParameters: {
-          'latitude': ?latitude,
-          'longitude': ?longitude,
-          'radiusMiles': ?radiusMiles,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+          if (radiusMiles != null) 'radiusMiles': radiusMiles,
         },
       );
 

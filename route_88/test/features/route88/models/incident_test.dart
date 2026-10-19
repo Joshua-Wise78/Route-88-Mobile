@@ -18,8 +18,11 @@ void main() {
         'roadClosureDetail': {
           'closureStartLocation': [35.0, -80.0],
           'closureEndLocation': [35.1, -80.1],
-          'polyline': [[35.0, -80.0], [35.1, -80.1]]
-        }
+          'polyline': [
+            [35.0, -80.0],
+            [35.1, -80.1],
+          ],
+        },
       };
 
       final incident = Incident.fromJson(json);
@@ -34,10 +37,13 @@ void main() {
       expect(incident.routeName, 'I-88');
       expect(incident.roadStatus, 'Closed');
       expect(incident.link?.href, 'https://example.com');
-      
+
       expect(incident.roadClosureDetail?.closureStartLocation, [35.0, -80.0]);
       expect(incident.roadClosureDetail?.closureEndLocation, [35.1, -80.1]);
-      expect(incident.roadClosureDetail?.polyline, [[35.0, -80.0], [35.1, -80.1]]);
+      expect(incident.roadClosureDetail?.polyline, [
+        [35.0, -80.0],
+        [35.1, -80.1],
+      ]);
     });
 
     test('fromJson handles nulls and missing fields gracefully', () {

@@ -18,10 +18,10 @@ class ConstructionRepository {
       final response = await apiClient.dio.get<Map<String, dynamic>>(
         '/construction',
         queryParameters: {
-          'latitude': ?latitude,
-          'longitude': ?longitude,
-          'radiusMiles': ?radiusMiles,
-          'waypoints': ?waypoints,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+          if (radiusMiles != null) 'radiusMiles': radiusMiles,
+          if (waypoints != null) 'waypoints': waypoints,
         },
       );
 
