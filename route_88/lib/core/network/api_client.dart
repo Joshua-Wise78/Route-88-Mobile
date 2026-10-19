@@ -6,7 +6,7 @@ class ApiClient {
   ApiClient()
     : dio = Dio(
         BaseOptions(
-          baseUrl: 'http://wise-server.tail904182.ts.net:8433/api/mobile',
+          baseUrl: 'https://wise-server.tail904182.ts.net:8433/api/mobile',
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
         ),
