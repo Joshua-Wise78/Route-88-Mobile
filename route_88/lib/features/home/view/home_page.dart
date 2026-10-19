@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:route_88/features/home/view/map_page.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_bloc.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_event.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_state.dart';
@@ -75,27 +76,7 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: double.infinity,
               color: const Color(0xFFE1E6EB),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.map_outlined,
-                      size: 80,
-                      color: Color(0xFF123B66),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Map Coming Soon',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF123B66),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: const MapPage(),
             ),
           ),
           Padding(
@@ -249,4 +230,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
