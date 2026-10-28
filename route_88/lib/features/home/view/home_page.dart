@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute<void>(
-                      builder: (context) => const IncidentsPage()
+                      builder: (context) => const IncidentsPage(),
                     ),
                   );
                 },
@@ -212,34 +212,34 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       bottomNavigationBar: NavigationBar(
-  onDestinationSelected: (index) {
-    if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) => const IncidentsPage(),
-        ),
-      );
-    }
-  },
-  destinations: const [
-    NavigationDestination(
-      icon: Icon(Icons.map_outlined),
-      selectedIcon: Icon(Icons.map),
-      label: 'Map',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.warning_amber_outlined),
-      selectedIcon: Icon(Icons.warning_amber),
-      label: 'Incidents',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: 'Settings',
-    ),
-  ],
-),
+        onDestinationSelected: (index) {
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const IncidentsPage(),
+              ),
+            );
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map),
+            label: 'Map',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.warning_amber_outlined),
+            selectedIcon: Icon(Icons.warning_amber),
+            label: 'Incidents',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 }
