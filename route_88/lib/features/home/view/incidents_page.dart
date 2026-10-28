@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:route_88/features/home/view/map_page.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_event.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
@@ -14,6 +15,46 @@ class IncidentsPage extends StatelessWidget {
   static const double testLat = 39.9612;
   static const double testLon = -83.0019;
   static const double testRadius = 50;
+
+  // Verify that coordinates are usable before opening the map.
+  bool _hasValidCoordinates(double latitude, double longitude) {
+    return latitude.isFinite &&
+        longitude.isFinite &&
+        latitude >= -90 &&
+        latitude <= 90 &&
+        longitude >= -180 &&
+        longitude <= 180 &&
+        !(latitude == 0 && longitude == 0);
+  }
+
+  // Open a map centered on the selected incident.
+  void _viewIncidentOnMap(
+    BuildContext context, {
+    required double latitude,
+    required double longitude,
+    String? routeName,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            centerTitle: true,
+            title: Text(
+              routeName ?? 'Incident Location',
+            ),
+          ),
+          body: MapPage(
+            latitude: latitude,
+            longitude: longitude,
+            showIncidentMarker: true,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,6 +196,11 @@ class IncidentsPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final incident = state.incidents[index];
 
+                  final hasValidLocation = _hasValidCoordinates(
+                    incident.latitude,
+                    incident.longitude,
+                  );
+
                   return Card(
                     color: Colors.white,
                     elevation: 2,
@@ -247,6 +293,53 @@ class IncidentsPage extends StatelessWidget {
                             ),
                             title: const Text('Road Status'),
                             subtitle: Text(incident.roadStatus!),
+                          ),
+
+                        const SizedBox(height: 12),
+
+                        // View selected incident on the map
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: hasValidLocation
+                                ? () {
+                                    _viewIncidentOnMap(
+                                      context,
+                                      latitude: incident.latitude,
+                                      longitude: incident.longitude,
+                                      routeName: incident.routeName,
+                                    );
+                                  }
+                                : null,
+                            icon: const Icon(Icons.map_outlined),
+                            label: const Text('View on Map'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              disabledForegroundColor: Colors.grey.shade600,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Explain why map navigation is unavailable.
+                        if (!hasValidLocation)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Location coordinates are unavailable '
+                              'for this incident.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                            ),
                           ),
                       ],
                     ),
