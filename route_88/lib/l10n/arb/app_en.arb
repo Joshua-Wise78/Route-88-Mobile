@@ -3,5 +3,9 @@
     "homeAppBarTitle": "Route 88",
     "@homeAppBarTitle": {
         "description": "Text shown in the AppBar of the Home Page"
+    },
+    "settingsAppBarTitle": "Settings",
+    "@settingsAppBarTitle": {
+    "description": "Text shown in the AppBar of the Settings Page"
     }
 }
