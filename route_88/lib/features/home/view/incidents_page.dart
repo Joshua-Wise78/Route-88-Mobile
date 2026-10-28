@@ -196,10 +196,12 @@ class IncidentsPage extends StatelessWidget {
                       iconColor: primaryColor,
                       collapsedIconColor: primaryColor,
                       childrenPadding: const EdgeInsets.fromLTRB(
-                        16, 0, 16, 16,
+                        16,
+                        0,
+                        16,
+                        16,
                       ),
-                      expandedCrossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      expandedCrossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Divider(),
 
