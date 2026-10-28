@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
@@ -144,23 +143,30 @@ class IncidentsPage extends StatelessWidget {
               );
             }
 
-            // Incident list
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.incidents.length,
-              itemBuilder: (context, index) {
-                final incident = state.incidents[index];
+            // Expandable incident list
+            return ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                overscroll: false,
+              ),
+              child: ListView.builder(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: state.incidents.length,
+                itemBuilder: (context, index) {
+                  final incident = state.incidents[index];
 
-                return Card(
-                  color: Colors.white,
-                  elevation: 2,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: ListTile(
+                  return Card(
+                    color: Colors.white,
+                    elevation: 2,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ExpansionTile(
+                      key: PageStorageKey(
+                        '${incident.id}-$index',
+                      ),
                       leading: const Icon(
                         Icons.warning_amber_rounded,
                         color: primaryColor,
@@ -187,10 +193,64 @@ class IncidentsPage extends StatelessWidget {
                           ),
                         ),
                       ),
+                      iconColor: primaryColor,
+                      collapsedIconColor: primaryColor,
+                      childrenPadding: const EdgeInsets.fromLTRB(
+                        16, 0, 16, 16,
+                      ),
+                      expandedCrossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Divider(),
+
+                        // Incident category
+                        if (incident.category != null)
+                          ListTile(
+                            leading: const Icon(
+                              Icons.info_outline,
+                              color: primaryColor,
+                            ),
+                            title: const Text('Incident Type'),
+                            subtitle: Text(incident.category!),
+                          ),
+
+                        // Incident location
+                        if (incident.location != null)
+                          ListTile(
+                            leading: const Icon(
+                              Icons.location_on_outlined,
+                              color: primaryColor,
+                            ),
+                            title: const Text('Location'),
+                            subtitle: Text(incident.location!),
+                          ),
+
+                        // Travel direction
+                        if (incident.direction != null)
+                          ListTile(
+                            leading: const Icon(
+                              Icons.signpost_outlined,
+                              color: primaryColor,
+                            ),
+                            title: const Text('Direction'),
+                            subtitle: Text(incident.direction!),
+                          ),
+
+                        // Road status
+                        if (incident.roadStatus != null)
+                          ListTile(
+                            leading: const Icon(
+                              Icons.block_outlined,
+                              color: primaryColor,
+                            ),
+                            title: const Text('Road Status'),
+                            subtitle: Text(incident.roadStatus!),
+                          ),
+                      ],
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             );
           }
 

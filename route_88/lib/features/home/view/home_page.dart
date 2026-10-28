@@ -88,7 +88,12 @@ class _HomePageState extends State<HomePage> {
               elevation: 2,
               child: InkWell(
                 onTap: () {
-                  // Navigation to the incidents page will be added later.
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => const IncidentsPage()
+                    ),
+                  );
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
