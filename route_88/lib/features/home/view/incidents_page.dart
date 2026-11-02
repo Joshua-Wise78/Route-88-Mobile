@@ -12,8 +12,8 @@ class IncidentsPage extends StatelessWidget {
   static const Color backgroundColor = Color(0xFFF5F7FA);
 
   // Temporary Columbus coordinates, matching HomePage.
-  static const double testLat = 39.9612;
-  static const double testLon = -83.0019;
+  static const double testLat = 39.7589;
+  static const double testLon = -84.1916;
   static const double testRadius = 50;
 
   // Verify that coordinates are usable before opening the map.
