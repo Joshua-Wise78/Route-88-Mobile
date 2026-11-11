@@ -15,11 +15,17 @@ class MapPage extends StatefulWidget {
     this.latitude,
     this.longitude,
     this.showIncidentMarker = false,
+    this.searchRadiusMiles = 50,
+    this.searchCenterLatitude = 39.9612,
+    this.searchCenterLongitude = -83.0019,
   });
 
   final double? latitude;
   final double? longitude;
   final bool showIncidentMarker;
+  final double searchRadiusMiles;
+  final double searchCenterLatitude;
+  final double searchCenterLongitude;
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -30,11 +36,6 @@ class _MapPageState extends State<MapPage> {
   static const Color incidentColor = Color(0xFFC33C3C);
   static const Color constructionColor = Color(0xFFE68A2E);
   static const Color backgroundColor = Color(0xFFF5F7FA);
-
-  static const LatLng defaultCenter = LatLng(
-    39.7589,
-    -84.1916,
-  );
 
   // Map filter settings.
   bool showIncidents = true;
@@ -389,7 +390,7 @@ class _MapPageState extends State<MapPage> {
 
     final center = hasSelectedIncident
         ? LatLng(widget.latitude!, widget.longitude!)
-        : defaultCenter;
+        : LatLng(widget.searchCenterLatitude, widget.searchCenterLongitude);
 
     return BlocBuilder<IncidentsBloc, IncidentsState>(
       builder: (context, incidentState) {
@@ -492,6 +493,22 @@ class _MapPageState extends State<MapPage> {
                       userAgentPackageName:
                           'com.example.verygoodcore.route_88.dev',
                     ),
+                    if (!hasSelectedIncident)
+                      CircleLayer(
+                        circles: [
+                          CircleMarker(
+                            point: LatLng(
+                              widget.searchCenterLatitude,
+                              widget.searchCenterLongitude,
+                            ),
+                            radius: widget.searchRadiusMiles * 1609.344,
+                            useRadiusInMeter: true,
+                            color: primaryColor.withValues(alpha: 0.12),
+                            borderColor: primaryColor,
+                            borderStrokeWidth: 2,
+                          ),
+                        ],
+                      ),
                     MarkerLayer(markers: markers),
                     const RichAttributionWidget(
                       attributions: [

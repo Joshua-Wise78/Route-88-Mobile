@@ -11,7 +11,7 @@ class IncidentsPage extends StatelessWidget {
   static const Color primaryColor = Color(0xFF123B66);
   static const Color backgroundColor = Color(0xFFF5F7FA);
 
-  // Temporary Columbus coordinates, matching HomePage.
+  // Temporary Dayton coordinates, matching HomePage.
   static const double testLat = 39.7589;
   static const double testLon = -84.1916;
   static const double testRadius = 50;
@@ -54,6 +54,26 @@ class IncidentsPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Refresh incidents using the existing Bloc event.
+  Future<void> _refreshIncidents(BuildContext context) async {
+    final bloc = context.read<IncidentsBloc>();
+
+    // Listen before dispatching to avoid missing a fast response.
+    final refreshCompleted = bloc.stream.firstWhere(
+      (state) => state is IncidentsLoaded || state is IncidentsError,
+    );
+
+    bloc.add(
+      const IncidentsRequested(
+        latitude: testLat,
+        longitude: testLon,
+        radiusMiles: testRadius,
+      ),
+    );
+
+    await refreshCompleted;
   }
 
   @override
@@ -148,203 +168,223 @@ class IncidentsPage extends StatelessWidget {
           if (state is IncidentsLoaded) {
             // No incidents available
             if (state.incidents.isEmpty) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 64,
-                        color: primaryColor,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'No Incidents Found',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
+              return RefreshIndicator(
+                color: primaryColor,
+                onRefresh: () => _refreshIncidents(context),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: constraints.maxHeight,
+                          child: const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    size: 64,
+                                    color: primaryColor,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No Incidents Found',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'There are currently no reported '
+                                    'incidents in this area.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'There are currently no reported '
-                        'incidents in this area.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                 ),
               );
             }
 
-            // Expandable incident list
-            return ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                overscroll: false,
-              ),
-              child: ListView.builder(
-                physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                itemCount: state.incidents.length,
-                itemBuilder: (context, index) {
-                  final incident = state.incidents[index];
+            // Expandable incident list with pull-to-refresh.
+            return RefreshIndicator(
+              color: primaryColor,
+              onRefresh: () => _refreshIncidents(context),
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  overscroll: false,
+                ),
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.incidents.length,
+                  itemBuilder: (context, index) {
+                    final incident = state.incidents[index];
 
-                  final hasValidLocation = _hasValidCoordinates(
-                    incident.latitude,
-                    incident.longitude,
-                  );
+                    final hasValidLocation = _hasValidCoordinates(
+                      incident.latitude,
+                      incident.longitude,
+                    );
 
-                  return Card(
-                    color: Colors.white,
-                    elevation: 2,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: ExpansionTile(
-                      key: PageStorageKey(
-                        '${incident.id}-$index',
+                    return Card(
+                      color: Colors.white,
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      leading: const Icon(
-                        Icons.warning_amber_rounded,
-                        color: primaryColor,
-                        size: 32,
-                      ),
-                      title: Text(
-                        incident.routeName ??
-                            incident.category ??
-                            'Traffic Incident',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                      clipBehavior: Clip.antiAlias,
+                      child: ExpansionTile(
+                        key: PageStorageKey(
+                          '${incident.id}-$index',
+                        ),
+                        leading: const Icon(
+                          Icons.warning_amber_rounded,
                           color: primaryColor,
+                          size: 32,
                         ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          incident.description ??
-                              incident.location ??
-                              'No description available',
+                        title: Text(
+                          incident.routeName ??
+                              incident.category ??
+                              'Traffic Incident',
                           style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
                           ),
                         ),
-                      ),
-                      iconColor: primaryColor,
-                      collapsedIconColor: primaryColor,
-                      childrenPadding: const EdgeInsets.fromLTRB(
-                        16,
-                        0,
-                        16,
-                        16,
-                      ),
-                      expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Divider(),
-
-                        // Incident category
-                        if (incident.category != null)
-                          ListTile(
-                            leading: const Icon(
-                              Icons.info_outline,
-                              color: primaryColor,
-                            ),
-                            title: const Text('Incident Type'),
-                            subtitle: Text(incident.category!),
-                          ),
-
-                        // Incident location
-                        if (incident.location != null)
-                          ListTile(
-                            leading: const Icon(
-                              Icons.location_on_outlined,
-                              color: primaryColor,
-                            ),
-                            title: const Text('Location'),
-                            subtitle: Text(incident.location!),
-                          ),
-
-                        // Travel direction
-                        if (incident.direction != null)
-                          ListTile(
-                            leading: const Icon(
-                              Icons.signpost_outlined,
-                              color: primaryColor,
-                            ),
-                            title: const Text('Direction'),
-                            subtitle: Text(incident.direction!),
-                          ),
-
-                        // Road status
-                        if (incident.roadStatus != null)
-                          ListTile(
-                            leading: const Icon(
-                              Icons.block_outlined,
-                              color: primaryColor,
-                            ),
-                            title: const Text('Road Status'),
-                            subtitle: Text(incident.roadStatus!),
-                          ),
-
-                        const SizedBox(height: 12),
-
-                        // View selected incident on the map
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: hasValidLocation
-                                ? () {
-                                    _viewIncidentOnMap(
-                                      context,
-                                      latitude: incident.latitude,
-                                      longitude: incident.longitude,
-                                      routeName: incident.routeName,
-                                    );
-                                  }
-                                : null,
-                            icon: const Icon(Icons.map_outlined),
-                            label: const Text('View on Map'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.grey.shade300,
-                              disabledForegroundColor: Colors.grey.shade600,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            incident.description ??
+                                incident.location ??
+                                'No description available',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
                             ),
                           ),
                         ),
+                        iconColor: primaryColor,
+                        collapsedIconColor: primaryColor,
+                        childrenPadding: const EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          16,
+                        ),
+                        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Divider(),
 
-                        // Explain why map navigation is unavailable.
-                        if (!hasValidLocation)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              'Location coordinates are unavailable '
-                              'for this incident.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
+                          // Incident category
+                          if (incident.category != null)
+                            ListTile(
+                              leading: const Icon(
+                                Icons.info_outline,
+                                color: primaryColor,
+                              ),
+                              title: const Text('Incident Type'),
+                              subtitle: Text(incident.category!),
+                            ),
+
+                          // Incident location
+                          if (incident.location != null)
+                            ListTile(
+                              leading: const Icon(
+                                Icons.location_on_outlined,
+                                color: primaryColor,
+                              ),
+                              title: const Text('Location'),
+                              subtitle: Text(incident.location!),
+                            ),
+
+                          // Travel direction
+                          if (incident.direction != null)
+                            ListTile(
+                              leading: const Icon(
+                                Icons.signpost_outlined,
+                                color: primaryColor,
+                              ),
+                              title: const Text('Direction'),
+                              subtitle: Text(incident.direction!),
+                            ),
+
+                          // Road status
+                          if (incident.roadStatus != null)
+                            ListTile(
+                              leading: const Icon(
+                                Icons.block_outlined,
+                                color: primaryColor,
+                              ),
+                              title: const Text('Road Status'),
+                              subtitle: Text(incident.roadStatus!),
+                            ),
+
+                          const SizedBox(height: 12),
+
+                          // View selected incident on the map
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: hasValidLocation
+                                  ? () {
+                                      _viewIncidentOnMap(
+                                        context,
+                                        latitude: incident.latitude,
+                                        longitude: incident.longitude,
+                                        routeName: incident.routeName,
+                                      );
+                                    }
+                                  : null,
+                              icon: const Icon(Icons.map_outlined),
+                              label: const Text('View on Map'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.grey.shade300,
+                                disabledForegroundColor: Colors.grey.shade600,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                  );
-                },
+
+                          // Explain why map navigation is unavailable.
+                          if (!hasValidLocation)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Location coordinates are unavailable '
+                                'for this incident.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             );
           }

@@ -1,13 +1,19 @@
+
 import 'package:flutter/material.dart';
-import 'package:route_88/features/home/view/incidents_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:route_88/features/home/view/incidents_page.dart';
 import 'package:route_88/features/home/view/map_page.dart';
+import 'package:route_88/features/home/view/settings_page.dart';
+
 import 'package:route_88/features/route88/bloc/construction/construction_bloc.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_event.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_state.dart';
+
 import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_event.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
+
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_bloc.dart';
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_event.dart';
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_state.dart';
@@ -77,7 +83,11 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: double.infinity,
               color: const Color(0xFFE1E6EB),
-              child: const MapPage(),
+              child: const MapPage(
+                searchRadiusMiles: testRadius,
+                searchCenterLatitude: testLat,
+                searchCenterLongitude: testLon,
+              ),
             ),
           ),
           Padding(
@@ -218,6 +228,13 @@ class _HomePageState extends State<HomePage> {
               context,
               MaterialPageRoute<void>(
                 builder: (context) => const IncidentsPage(),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const SettingsPage(),
               ),
             );
           }
