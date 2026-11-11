@@ -1,13 +1,19 @@
+
 import 'package:flutter/material.dart';
-import 'package:route_88/features/home/view/incidents_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:route_88/features/home/view/incidents_page.dart';
 import 'package:route_88/features/home/view/map_page.dart';
+import 'package:route_88/features/home/view/settings_page.dart';
+
 import 'package:route_88/features/route88/bloc/construction/construction_bloc.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_event.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_state.dart';
+
 import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_event.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
+
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_bloc.dart';
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_event.dart';
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_state.dart';
@@ -77,7 +83,11 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: double.infinity,
               color: const Color(0xFFE1E6EB),
-              child: const MapPage(),
+              child: const MapPage(
+                searchRadiusMiles: testRadius,
+                searchCenterLatitude: testLat,
+                searchCenterLongitude: testLon,
+              ),
             ),
           ),
           Padding(
@@ -88,7 +98,12 @@ class _HomePageState extends State<HomePage> {
               elevation: 2,
               child: InkWell(
                 onTap: () {
-                  // Navigation to the incidents page will be added later.
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => const IncidentsPage(),
+                    ),
+                  );
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
@@ -207,34 +222,41 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       bottomNavigationBar: NavigationBar(
-  onDestinationSelected: (index) {
-    if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) => const IncidentsPage(),
-        ),
-      );
-    }
-  },
-  destinations: const [
-    NavigationDestination(
-      icon: Icon(Icons.map_outlined),
-      selectedIcon: Icon(Icons.map),
-      label: 'Map',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.warning_amber_outlined),
-      selectedIcon: Icon(Icons.warning_amber),
-      label: 'Incidents',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: 'Settings',
-    ),
-  ],
-),
+        onDestinationSelected: (index) {
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const IncidentsPage(),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const SettingsPage(),
+              ),
+            );
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map),
+            label: 'Map',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.warning_amber_outlined),
+            selectedIcon: Icon(Icons.warning_amber),
+            label: 'Incidents',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 }
