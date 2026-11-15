@@ -12,6 +12,8 @@ class RoutingBloc extends Bloc<RoutingEvent, RoutingState> {
     on<CalculatedRouteRequested>(_onCalculatedRouteRequested);
     on<ClearRouteRequested>(_onClearRouteRequested);
     on<ClearAutocompleteRequested>(_onClearAutocompleteRequested);
+    on<CommuteCheckRequested>(_onCommuteCheckRequested);
+    on<ClearCommuteRequested>(_onClearCommuteRequested);
   }
 
   final RoutingRepository routingRepository;
@@ -68,6 +70,37 @@ class RoutingBloc extends Bloc<RoutingEvent, RoutingState> {
     }
   }
 
+  Future<void> _onCommuteCheckRequested(
+    CommuteCheckRequested event,
+    Emitter<RoutingState> emit,
+  ) async {
+    emit(
+      CommuteCheckLoading(
+        places: state.places,
+        route: state.route,
+        previousCommuteResult: state.commuteResult,
+      ),
+    );
+
+    try {
+      final result = await routingRepository.checkCommuteRoute(
+        start: event.start,
+        end: event.end,
+        polyline: event.polyline,
+        bufferMiles: event.bufferMiles,
+      );
+      emit(
+        CommuteCheckLoaded(
+          commuteResult: result,
+          places: state.places,
+          route: state.route,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(CommuteCheckError(e.toString()));
+    }
+  }
+
   void _onClearRouteRequested(
     ClearRouteRequested event,
     Emitter<RoutingState> emit,
@@ -84,6 +117,19 @@ class RoutingBloc extends Bloc<RoutingEvent, RoutingState> {
     Emitter<RoutingState> emit,
   ) {
     if (state.route != null) {
+      emit(RouteCalculated(route: state.route!));
+    } else {
+      emit(const RoutingInitial());
+    }
+  }
+
+  void _onClearCommuteRequested(
+    ClearCommuteRequested event,
+    Emitter<RoutingState> emit,
+  ) {
+    if (state.places.isNotEmpty) {
+      emit(AutoCompleteLoaded(places: state.places));
+    } else if (state.route != null) {
       emit(RouteCalculated(route: state.route!));
     } else {
       emit(const RoutingInitial());

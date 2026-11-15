@@ -1,13 +1,22 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
-import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
+import 'package:route_88/features/home/utils/map_theme.dart';
+import 'package:route_88/features/home/widgets/commute_picker_sheet.dart';
+import 'package:route_88/features/home/widgets/commute_summary_card.dart';
+import 'package:route_88/features/home/widgets/map_filters_sheet.dart';
+import 'package:route_88/features/home/widgets/map_marker_builder.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_bloc.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_state.dart';
+import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
+import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
+import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_bloc.dart';
+import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_state.dart';
+import 'package:route_88/features/routing/bloc/routing_bloc.dart';
+import 'package:route_88/features/routing/bloc/routing_state.dart';
+import 'package:route_88/features/routing/models/commute_check_result.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({
@@ -18,6 +27,7 @@ class MapPage extends StatefulWidget {
     this.searchRadiusMiles = 50,
     this.searchCenterLatitude = 39.9612,
     this.searchCenterLongitude = -83.0019,
+    this.onLocationRefreshRequested,
   });
 
   final double? latitude;
@@ -26,521 +36,351 @@ class MapPage extends StatefulWidget {
   final double searchRadiusMiles;
   final double searchCenterLatitude;
   final double searchCenterLongitude;
+  final VoidCallback? onLocationRefreshRequested;
 
   @override
   State<MapPage> createState() => _MapPageState();
 }
 
 class _MapPageState extends State<MapPage> {
-  static const Color primaryColor = Color(0xFF123B66);
-  static const Color incidentColor = Color(0xFFC33C3C);
-  static const Color constructionColor = Color(0xFFE68A2E);
-  static const Color backgroundColor = Color(0xFFF5F7FA);
+  final MapController _mapController = MapController();
 
-  // Map filter settings.
   bool showIncidents = true;
+  bool showSlowdowns = true;
   bool showConstruction = true;
 
-  bool _hasValidCoordinates(double latitude, double longitude) {
-    return latitude.isFinite &&
-        longitude.isFinite &&
-        latitude >= -90 &&
-        latitude <= 90 &&
-        longitude >= -180 &&
-        longitude <= 180 &&
-        !(latitude == 0 && longitude == 0);
+  @override
+  void didUpdateWidget(MapPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchCenterLatitude != widget.searchCenterLatitude ||
+        oldWidget.searchCenterLongitude != widget.searchCenterLongitude) {
+      _mapController.move(
+        LatLng(widget.searchCenterLatitude, widget.searchCenterLongitude),
+        _mapController.camera.zoom,
+      );
+    }
   }
 
-  // Display the filter options.
-  void _showMapFilters() {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: backgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (sheetContext, updateSheet) {
-            return SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Map Filters',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    const Text(
-                      'Choose which traffic events appear on your map.',
-                      style: TextStyle(
-                        color: Colors.black54,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Incidents'),
-                      secondary: const Icon(
-                        Icons.warning_amber_rounded,
-                        color: incidentColor,
-                      ),
-                      activeColor: primaryColor,
-                      value: showIncidents,
-                      onChanged: (value) {
-                        setState(() {
-                          showIncidents = value;
-                        });
-                        updateSheet(() {});
-                      },
-                    ),
-
-                    const Divider(),
-
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Construction'),
-                      secondary: const Icon(
-                        Icons.construction,
-                        color: constructionColor,
-                      ),
-                      activeColor: primaryColor,
-                      value: showConstruction,
-                      onChanged: (value) {
-                        setState(() {
-                          showConstruction = value;
-                        });
-                        updateSheet(() {});
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            showIncidents = true;
-                            showConstruction = true;
-                          });
-                          updateSheet(() {});
-                        },
-                        child: const Text('Reset Filters'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailRow({
-    required IconData icon,
-    required String label,
-    required String value,
+  ({
+    List<Marker> markers,
+    List<Polyline> polylines,
+    LatLng center,
+    double zoom,
+  }) _resolveMapElements({
+    required CommuteCheckResult? commuteResult,
+    required IncidentsState incidentState,
+    required ConstructionState constructionState,
+    required SlowdownsState slowdownState,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          color: primaryColor,
-          size: 24,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: primaryColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+    final markers = <Marker>[];
+    final polylines = <Polyline>[];
+    final LatLng center;
+    final double zoom;
 
-  void _showEventDetails(
-    BuildContext context, {
-    required String title,
-    required String description,
-    required Color eventColor,
-    required IconData eventIcon,
-    String? location,
-    String? direction,
-    String? status,
-    String? startDate,
-    String? endDate,
-  }) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: backgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight:
-                  MediaQuery.sizeOf(sheetContext).height * 0.55,
+    if (commuteResult != null) {
+      final routeCoords = commuteResult.route.coordinates;
+      final routePoints =
+          routeCoords.map((c) => LatLng(c.lat, c.lng)).toList();
+
+      if (routePoints.isNotEmpty) {
+        polylines
+          ..add(
+            Polyline(
+              points: routePoints,
+              color: MapTheme.routeBorder,
+              strokeWidth: 7,
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        eventIcon,
-                        color: eventColor,
-                        size: 32,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(sheetContext);
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.5,
-                      color: Colors.black87,
-                    ),
-                  ),
-
-                  if (location != null ||
-                      direction != null ||
-                      status != null ||
-                      startDate != null ||
-                      endDate != null) ...[
-                    const SizedBox(height: 20),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                  ],
-
-                  if (location != null) ...[
-                    _buildDetailRow(
-                      icon: Icons.location_on_outlined,
-                      label: 'Location',
-                      value: location,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (direction != null) ...[
-                    _buildDetailRow(
-                      icon: Icons.signpost_outlined,
-                      label: 'Direction',
-                      value: direction,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (status != null && status.isNotEmpty) ...[
-                    _buildDetailRow(
-                      icon: Icons.info_outline,
-                      label: 'Status',
-                      value: status,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (startDate != null &&
-                      startDate.isNotEmpty) ...[
-                    _buildDetailRow(
-                      icon: Icons.event,
-                      label: 'Start Date',
-                      value: startDate,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (endDate != null && endDate.isNotEmpty) ...[
-                    _buildDetailRow(
-                      icon: Icons.event_available,
-                      label: 'End Date',
-                      value: endDate,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ],
-              ),
+          )
+          ..add(
+            Polyline(
+              points: routePoints,
+              color: MapTheme.route,
+              strokeWidth: 5,
             ),
-          ),
-        );
-      },
-    );
-  }
-
-  Marker _createMarker(
-    BuildContext context, {
-    required LatLng point,
-    required String title,
-    required String description,
-    required Color markerColor,
-    required IconData eventIcon,
-    String? location,
-    String? direction,
-    String? status,
-    String? startDate,
-    String? endDate,
-  }) {
-    return Marker(
-      point: point,
-      width: 48,
-      height: 48,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          _showEventDetails(
-            context,
-            title: title,
-            description: description,
-            eventColor: markerColor,
-            eventIcon: eventIcon,
-            location: location,
-            direction: direction,
-            status: status,
-            startDate: startDate,
-            endDate: endDate,
           );
-        },
-        child: Icon(
-          Icons.location_on,
-          color: markerColor,
-          size: 42,
+
+        markers
+          ..add(
+            MapMarkerBuilder.routeEndpoint(
+              point: routePoints.first,
+              isStart: true,
+            ),
+          )
+          ..add(
+            MapMarkerBuilder.routeEndpoint(
+              point: routePoints.last,
+              isStart: false,
+            ),
+          )
+          ..addAll(
+            commuteResult.hazards
+                .map((h) => MapMarkerBuilder.fromRouteHazard(context, h))
+                .whereType<Marker>(),
+          );
+
+        center = routePoints[routePoints.length ~/ 2];
+        zoom = 8.5;
+      } else {
+        center = LatLng(
+          widget.searchCenterLatitude,
+          widget.searchCenterLongitude,
+        );
+        zoom = 9.2;
+      }
+    } else if (widget.showIncidentMarker &&
+        widget.latitude != null &&
+        widget.longitude != null &&
+        MapMarkerBuilder.hasValidCoordinates(
+          widget.latitude!,
+          widget.longitude!,
+        )) {
+      center = LatLng(widget.latitude!, widget.longitude!);
+      zoom = 14;
+      markers.add(
+        Marker(
+          point: center,
+          width: 48,
+          height: 48,
+          child: const Icon(
+            Icons.location_on,
+            color: MapTheme.incident,
+            size: 42,
+          ),
         ),
-      ),
+      );
+    } else {
+      center = LatLng(
+        widget.searchCenterLatitude,
+        widget.searchCenterLongitude,
+      );
+      zoom = 9.2;
+
+      if (showIncidents && incidentState is IncidentsLoaded) {
+        markers.addAll(
+          incidentState.incidents
+              .map((i) => MapMarkerBuilder.fromIncident(context, i))
+              .whereType<Marker>(),
+        );
+      }
+
+      if (showSlowdowns && slowdownState is SlowdownsLoaded) {
+        markers.addAll(
+          slowdownState.slowdowns
+              .map((s) => MapMarkerBuilder.fromSlowdown(context, s))
+              .whereType<Marker>(),
+        );
+      }
+
+      if (showConstruction && constructionState is ConstructionLoaded) {
+        markers.addAll(
+          constructionState.construction
+              .map((c) => MapMarkerBuilder.fromConstruction(context, c))
+              .whereType<Marker>(),
+        );
+      }
+
+      markers.add(MapMarkerBuilder.userLocation(center));
+    }
+
+    return (
+      markers: markers,
+      polylines: polylines,
+      center: center,
+      zoom: zoom,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasSelectedIncident =
-        widget.showIncidentMarker &&
-        widget.latitude != null &&
-        widget.longitude != null &&
-        _hasValidCoordinates(
-          widget.latitude!,
-          widget.longitude!,
-        );
+    final routingState = context.watch<RoutingBloc>().state;
+    final incidentState = context.watch<IncidentsBloc>().state;
+    final constructionState = context.watch<ConstructionBloc>().state;
+    final slowdownState = context.watch<SlowdownsBloc>().state;
 
-    final center = hasSelectedIncident
-        ? LatLng(widget.latitude!, widget.longitude!)
-        : LatLng(widget.searchCenterLatitude, widget.searchCenterLongitude);
+    final commuteResult = routingState is CommuteCheckLoaded
+        ? routingState.commuteResult
+        : null;
+    final isCommuteActive = commuteResult != null;
 
-    return BlocBuilder<IncidentsBloc, IncidentsState>(
-      builder: (context, incidentState) {
-        return BlocBuilder<ConstructionBloc, ConstructionState>(
-          builder: (context, constructionState) {
-            final markers = <Marker>[];
+    final mapData = _resolveMapElements(
+      commuteResult: commuteResult,
+      incidentState: incidentState,
+      constructionState: constructionState,
+      slowdownState: slowdownState,
+    );
 
-            // Always show a specifically selected incident.
-            if (hasSelectedIncident) {
-              markers.add(
-                Marker(
-                  point: center,
-                  width: 48,
-                  height: 48,
-                  child: const Icon(
-                    Icons.location_on,
-                    color: incidentColor,
-                    size: 42,
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: mapData.center,
+            initialZoom: mapData.zoom,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.verygoodcore.route_88.dev',
+            ),
+            if (!widget.showIncidentMarker && !isCommuteActive)
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: LatLng(
+                      widget.searchCenterLatitude,
+                      widget.searchCenterLongitude,
+                    ),
+                    radius: widget.searchRadiusMiles * 1609.344,
+                    useRadiusInMeter: true,
+                    color: MapTheme.primary.withValues(alpha: 0.12),
+                    borderColor: MapTheme.primary,
+                    borderStrokeWidth: 2,
                   ),
+                ],
+              ),
+            if (mapData.polylines.isNotEmpty)
+              PolylineLayer(polylines: mapData.polylines),
+            MarkerLayer(markers: mapData.markers),
+            const RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution('OpenStreetMap contributors'),
+              ],
+            ),
+          ],
+        ),
+
+        // Commute active summary card
+        if (isCommuteActive)
+          Positioned(
+            top: 12,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: CommuteSummaryCard(result: commuteResult),
+            ),
+          ),
+
+        // Loading pill indicator
+        if (routingState is CommuteCheckLoading)
+          Positioned(
+            top: 20,
+            left: 32,
+            right: 32,
+            child: SafeArea(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
                 ),
-              );
-            } else {
-              if (showIncidents && incidentState is IncidentsLoaded) {
-                for (final incident in incidentState.incidents) {
-                  if (!_hasValidCoordinates(
-                    incident.latitude,
-                    incident.longitude,
-                  )) {
-                    continue;
-                  }
-
-                  markers.add(
-                    _createMarker(
-                      context,
-                      point: LatLng(
-                        incident.latitude,
-                        incident.longitude,
-                      ),
-                      title: incident.routeName ??
-                          incident.category ??
-                          'Traffic Incident',
-                      description: incident.description ??
-                          'No description available.',
-                      markerColor: incidentColor,
-                      eventIcon: Icons.warning_amber_rounded,
-                      location: incident.location,
-                      direction: incident.direction,
-                    ),
-                  );
-                }
-              }
-
-              if (showConstruction &&
-                  constructionState is ConstructionLoaded) {
-                for (final construction
-                    in constructionState.construction) {
-                  if (!_hasValidCoordinates(
-                    construction.latitude,
-                    construction.longitude,
-                  )) {
-                    continue;
-                  }
-
-                  markers.add(
-                    _createMarker(
-                      context,
-                      point: LatLng(
-                        construction.latitude,
-                        construction.longitude,
-                      ),
-                      title: construction.routeName ??
-                          'Road Construction',
-                      description: construction.description ??
-                          construction.workZone?.description ??
-                          'No description available.',
-                      markerColor: constructionColor,
-                      eventIcon: Icons.construction,
-                      location: construction.location,
-                      direction: construction.direction,
-                      status: construction.status,
-                      startDate: construction.startDate,
-                      endDate: construction.endDate,
-                    ),
-                  );
-                }
-              }
-            }
-
-            return Stack(
-              children: [
-                FlutterMap(
-                  options: MapOptions(
-                    initialCenter: center,
-                    initialZoom: hasSelectedIncident ? 14.0 : 9.2,
-                  ),
+                decoration: BoxDecoration(
+                  color: MapTheme.primary,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 8),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName:
-                          'com.example.verygoodcore.route_88.dev',
-                    ),
-                    if (!hasSelectedIncident)
-                      CircleLayer(
-                        circles: [
-                          CircleMarker(
-                            point: LatLng(
-                              widget.searchCenterLatitude,
-                              widget.searchCenterLongitude,
-                            ),
-                            radius: widget.searchRadiusMiles * 1609.344,
-                            useRadiusInMeter: true,
-                            color: primaryColor.withValues(alpha: 0.12),
-                            borderColor: primaryColor,
-                            borderStrokeWidth: 2,
-                          ),
-                        ],
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
                       ),
-                    MarkerLayer(markers: markers),
-                    const RichAttributionWidget(
-                      attributions: [
-                        TextSourceAttribution(
-                          'OpenStreetMap contributors',
-                        ),
-                      ],
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Checking 500m corridor hazards...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
 
-                // Filter button above the map.
-                if (!hasSelectedIncident)
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: SafeArea(
-                      child: FloatingActionButton.small(
-                        heroTag: 'map_filters',
-                        backgroundColor: backgroundColor,
-                        foregroundColor: primaryColor,
-                        tooltip: 'Map filters',
-                        onPressed: _showMapFilters,
-                        child: const Icon(Icons.tune),
+        // Commute action button on bottom left
+        Positioned(
+          bottom: 24,
+          left: 16,
+          child: SafeArea(
+            child: FloatingActionButton.extended(
+              heroTag: 'commute_picker',
+              backgroundColor: MapTheme.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.alt_route),
+              label: Text(isCommuteActive ? 'Switch Route' : 'Commute'),
+              onPressed: () => CommutePickerSheet.show(
+                context,
+                currentLatitude: widget.searchCenterLatitude,
+                currentLongitude: widget.searchCenterLongitude,
+              ),
+            ),
+          ),
+        ),
+
+        // Map utility buttons on bottom right
+        Positioned(
+          bottom: 24,
+          right: 16,
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'my_location',
+                  backgroundColor: MapTheme.background,
+                  foregroundColor: MapTheme.primary,
+                  tooltip: 'My Location',
+                  onPressed: () {
+                    widget.onLocationRefreshRequested?.call();
+                    _mapController.move(
+                      LatLng(
+                        widget.searchCenterLatitude,
+                        widget.searchCenterLongitude,
                       ),
-                    ),
-                  ),
+                      11.5,
+                    );
+                  },
+                  child: const Icon(Icons.my_location),
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton.small(
+                  heroTag: 'map_filters',
+                  backgroundColor: MapTheme.background,
+                  foregroundColor: MapTheme.primary,
+                  tooltip: 'Map filters',
+                  onPressed: () {
+                    MapFiltersSheet.show(
+                      context,
+                      showIncidents: showIncidents,
+                      showSlowdowns: showSlowdowns,
+                      showConstruction: showConstruction,
+                      onChanged: ({
+                        required showConstruction,
+                        required showIncidents,
+                        required showSlowdowns,
+                      }) {
+                        setState(() {
+                          this.showIncidents = showIncidents;
+                          this.showSlowdowns = showSlowdowns;
+                          this.showConstruction = showConstruction;
+                        });
+                      },
+                    );
+                  },
+                  child: const Icon(Icons.tune),
+                ),
               ],
-            );
-          },
-        );
-      },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

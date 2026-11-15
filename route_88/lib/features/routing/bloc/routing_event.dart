@@ -59,3 +59,28 @@ class ClearRouteRequested extends ClearRouteEvent {
 class ClearAutocompleteRequested extends RoutingEvent {
   const ClearAutocompleteRequested();
 }
+
+sealed class CommuteCheckEvent extends RoutingEvent {
+  const CommuteCheckEvent();
+}
+
+class CommuteCheckRequested extends CommuteCheckEvent {
+  const CommuteCheckRequested({
+    this.start,
+    this.end,
+    this.polyline,
+    this.bufferMiles = 0.31, // ~500 meters default
+  });
+
+  final Coordinate? start;
+  final Coordinate? end;
+  final List<Coordinate>? polyline;
+  final double bufferMiles;
+
+  @override
+  List<Object?> get props => [start, end, polyline, bufferMiles];
+}
+
+class ClearCommuteRequested extends CommuteCheckEvent {
+  const ClearCommuteRequested();
+}

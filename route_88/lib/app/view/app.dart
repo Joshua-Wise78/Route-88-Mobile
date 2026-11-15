@@ -14,7 +14,8 @@ import 'package:route_88/features/routing/repositories/routing_repository.dart';
 import 'package:route_88/l10n/l10n.dart';
 
 class App extends StatelessWidget {
-  App({super.key}) : _apiClient = ApiClient();
+  App({super.key, ApiClient? apiClient})
+      : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 
