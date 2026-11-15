@@ -79,6 +79,53 @@ void main() {
         expect(result, isEmpty);
       });
 
+      test('falls back to /api/route/autocomplete when /route/autocomplete returns 404', () async {
+        final mockOptions = BaseOptions(baseUrl: 'https://wise-server.tail904182.ts.net:8443/api/mobile');
+        when(() => mockDio.options).thenReturn(mockOptions);
+
+        when(
+          () => mockDio.get<Map<String, dynamic>>(
+            '/route/autocomplete',
+            queryParameters: {'query': 'Columbus'},
+          ),
+        ).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(path: '/route/autocomplete'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/route/autocomplete'),
+              statusCode: 404,
+            ),
+          ),
+        );
+
+        when(
+          () => mockDio.get<Map<String, dynamic>>(
+            'https://wise-server.tail904182.ts.net:8443/api/route/autocomplete',
+            queryParameters: {'query': 'Columbus'},
+          ),
+        ).thenAnswer(
+          (_) async => Response(
+            requestOptions: RequestOptions(path: '/api/route/autocomplete'),
+            data: {
+              'success': true,
+              'results': [
+                {
+                  'id': 200,
+                  'displayName': 'Columbus, OH',
+                  'lat': 39.96,
+                  'lon': -83.00,
+                },
+              ],
+            },
+            statusCode: 200,
+          ),
+        );
+
+        final result = await repository.searchPlaces('Columbus');
+        expect(result.length, equals(1));
+        expect(result.first.id, equals('200'));
+      });
+
       test('throws Exception on DioException', () async {
         when(
           () => mockDio.get<Map<String, dynamic>>(
@@ -217,6 +264,191 @@ void main() {
               (e) => e.toString(),
               'message',
               contains('No route found'),
+            ),
+          ),
+        );
+      });
+    });
+
+    group('checkCommuteRoute', () {
+      test('returns CommuteCheckResult on success', () async {
+        const start = Coordinate(lat: 39.96, lng: -83.00);
+        const end = Coordinate(lat: 39.10, lng: -84.51);
+
+        final mockResponseData = {
+          'success': true,
+          'isClear': true,
+          'status': 'clear',
+          'summary': {
+            'totalHazards': 0,
+            'incidentsCount': 0,
+            'slowdownsCount': 0,
+            'constructionCount': 0,
+            'message': 'Clear',
+          },
+          'route': {
+            'totalDistanceMiles': 100.0,
+            'totalDurationSeconds': 5400,
+            'start': {'lat': 39.96, 'lon': -83.00},
+            'end': {'lat': 39.10, 'lon': -84.51},
+            'geometry': {
+              'type': 'LineString',
+              'coordinates': [
+                [-83.00, 39.96],
+                [-84.51, 39.10],
+              ],
+            },
+          },
+          'corridorBufferMiles': 0.31,
+          'hazards': <dynamic>[],
+        };
+
+        when(
+          () => mockDio.get<Map<String, dynamic>>(
+            '/route/check',
+            queryParameters: {
+              'startLat': 39.96,
+              'startLon': -83.00,
+              'endLat': 39.10,
+              'endLon': -84.51,
+              'bufferMiles': 0.31,
+            },
+          ),
+        ).thenAnswer(
+          (_) async => Response(
+            requestOptions: RequestOptions(path: '/route/check'),
+            data: mockResponseData,
+            statusCode: 200,
+          ),
+        );
+
+        final result = await repository.checkCommuteRoute(
+          start: start,
+          end: end,
+          bufferMiles: 0.31,
+        );
+
+        expect(result.success, isTrue);
+        expect(result.isClear, isTrue);
+        expect(result.status, equals('clear'));
+        expect(result.corridorBufferMiles, equals(0.31));
+      });
+
+      test('supports custom polyline via POST /route/check', () async {
+        const polyline = [
+          Coordinate(lat: 39.96, lng: -83.00),
+          Coordinate(lat: 39.50, lng: -83.50),
+          Coordinate(lat: 39.10, lng: -84.51),
+        ];
+
+        final mockResponseData = {
+          'success': true,
+          'isClear': true,
+          'status': 'clear',
+          'summary': {
+            'totalHazards': 0,
+            'incidentsCount': 0,
+            'slowdownsCount': 0,
+            'constructionCount': 0,
+            'message': 'Clear',
+          },
+          'route': {
+            'totalDistanceMiles': 105.0,
+            'totalDurationSeconds': 6000,
+            'start': {'lat': 39.96, 'lon': -83.00},
+            'end': {'lat': 39.10, 'lon': -84.51},
+            'geometry': {
+              'type': 'LineString',
+              'coordinates': [
+                [-83.00, 39.96],
+                [-83.50, 39.50],
+                [-84.51, 39.10],
+              ],
+            },
+          },
+          'corridorBufferMiles': 0.31,
+          'hazards': <dynamic>[],
+        };
+
+        when(
+          () => mockDio.post<Map<String, dynamic>>(
+            '/route/check',
+            data: any(named: 'data'),
+          ),
+        ).thenAnswer(
+          (_) async => Response(
+            requestOptions: RequestOptions(path: '/route/check'),
+            data: mockResponseData,
+            statusCode: 200,
+          ),
+        );
+
+        final result = await repository.checkCommuteRoute(
+          polyline: polyline,
+          bufferMiles: 0.31,
+        );
+
+        expect(result.success, isTrue);
+        expect(result.route.coordinates.length, equals(3));
+      });
+
+      test('throws Exception when success is false or data is null', () async {
+        const start = Coordinate(lat: 39.96, lng: -83.00);
+        const end = Coordinate(lat: 39.10, lng: -84.51);
+
+        when(
+          () => mockDio.get<Map<String, dynamic>>(
+            '/route/check',
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenAnswer(
+          (_) async => Response(
+            requestOptions: RequestOptions(path: '/route/check'),
+            data: {'success': false, 'error': 'Corridor calculation failed'},
+            statusCode: 400,
+          ),
+        );
+
+        expect(
+          () => repository.checkCommuteRoute(start: start, end: end),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'message',
+              contains('Corridor calculation failed'),
+            ),
+          ),
+        );
+      });
+
+      test('throws Exception on DioException with backend error message',
+          () async {
+        const start = Coordinate(lat: 39.96, lng: -83.00);
+        const end = Coordinate(lat: 39.10, lng: -84.51);
+
+        when(
+          () => mockDio.get<Map<String, dynamic>>(
+            '/route/check',
+            queryParameters: any(named: 'queryParameters'),
+          ),
+        ).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(path: '/route/check'),
+            response: Response(
+              requestOptions: RequestOptions(path: '/route/check'),
+              data: {'error': 'Service unavailable'},
+              statusCode: 503,
+            ),
+          ),
+        );
+
+        expect(
+          () => repository.checkCommuteRoute(start: start, end: end),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'message',
+              contains('Service unavailable'),
             ),
           ),
         );

@@ -1,7 +1,11 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:route_88/core/utils/location_service.dart';
 
+import 'package:route_88/features/home/utils/map_theme.dart';
 import 'package:route_88/features/home/view/incidents_page.dart';
 import 'package:route_88/features/home/view/map_page.dart';
 import 'package:route_88/features/home/view/settings_page.dart';
@@ -26,47 +30,70 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Temporary Columbus, OH coordinates for testing.
-  // These will eventually be replaced with the user's current location.
-  static const double testLat = 39.9612;
-  static const double testLon = -83.0019;
-  static const double testRadius = 50;
+  static const double defaultLat = 39.9612;
+  static const double defaultLon = -83.0019;
+  static const double searchRadius = 50;
+
+  final LocationService _locationService = const LocationService();
+
+  double _currentLat = defaultLat;
+  double _currentLon = defaultLon;
+  bool _isLocating = false;
 
   @override
   void initState() {
     super.initState();
+    _fetchTrafficData(_currentLat, _currentLon);
+    unawaited(_resolveUserLocation());
+  }
 
+  void _fetchTrafficData(double lat, double lon) {
     context.read<IncidentsBloc>().add(
-      const IncidentsRequested(
-        latitude: testLat,
-        longitude: testLon,
-        radiusMiles: testRadius,
+      IncidentsRequested(
+        latitude: lat,
+        longitude: lon,
+        radiusMiles: searchRadius,
       ),
     );
 
     context.read<ConstructionBloc>().add(
-      const ConstructionRequested(
-        latitude: testLat,
-        longitude: testLon,
-        radiusMiles: testRadius,
+      ConstructionRequested(
+        latitude: lat,
+        longitude: lon,
+        radiusMiles: searchRadius,
       ),
     );
 
     context.read<SlowdownsBloc>().add(
-      const SlowdownsRequested(
-        latitude: testLat,
-        longitude: testLon,
-        radiusMiles: testRadius,
+      SlowdownsRequested(
+        latitude: lat,
+        longitude: lon,
+        radiusMiles: searchRadius,
       ),
     );
+  }
+
+  Future<void> _resolveUserLocation() async {
+    setState(() => _isLocating = true);
+    final coord = await _locationService.getCurrentLocation();
+    if (coord != null && mounted) {
+      setState(() {
+        _currentLat = coord.lat;
+        _currentLon = coord.lng;
+        _isLocating = false;
+      });
+      _fetchTrafficData(_currentLat, _currentLon);
+    } else if (mounted) {
+      setState(() => _isLocating = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: MapTheme.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF123B66),
+        backgroundColor: MapTheme.primary,
         foregroundColor: Colors.white,
         title: const Text(
           'ROUTE 88',
@@ -83,10 +110,10 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: double.infinity,
               color: const Color(0xFFE1E6EB),
-              child: const MapPage(
-                searchRadiusMiles: testRadius,
-                searchCenterLatitude: testLat,
-                searchCenterLongitude: testLon,
+              child: MapPage(
+                searchCenterLatitude: _currentLat,
+                searchCenterLongitude: _currentLon,
+                onLocationRefreshRequested: _resolveUserLocation,
               ),
             ),
           ),
@@ -116,19 +143,21 @@ class _HomePageState extends State<HomePage> {
                       const Icon(
                         Icons.warning_amber_rounded,
                         size: 32,
-                        color: Color(0xFF123B66),
+                        color: MapTheme.primary,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Traffic near you',
-                              style: TextStyle(
+                            Text(
+                              _isLocating
+                                  ? 'Locating your area...'
+                                  : 'Traffic near you',
+                              style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF123B66),
+                                color: MapTheme.primary,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -211,7 +240,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const Icon(
                         Icons.chevron_right,
-                        color: Color(0xFF123B66),
+                        color: MapTheme.primary,
                       ),
                     ],
                   ),
