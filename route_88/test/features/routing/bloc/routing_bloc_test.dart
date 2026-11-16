@@ -4,8 +4,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:route_88/features/routing/bloc/routing_bloc.dart';
 import 'package:route_88/features/routing/bloc/routing_event.dart';
 import 'package:route_88/features/routing/bloc/routing_state.dart';
+import 'package:route_88/features/routing/models/commute_check_result.dart';
+import 'package:route_88/features/routing/models/commute_route.dart';
 import 'package:route_88/features/routing/models/coordinate.dart';
 import 'package:route_88/features/routing/models/place.dart';
+import 'package:route_88/features/routing/models/route_check_summary.dart';
 import 'package:route_88/features/routing/models/route_result.dart';
 import 'package:route_88/features/routing/repositories/routing_repository.dart';
 
@@ -269,6 +272,95 @@ void main() {
             'route',
             mockResult,
           ),
+        ],
+      );
+    });
+
+    group('CommuteCheckRequested', () {
+      const start = Coordinate(lat: 39.96, lng: -83.00);
+      const end = Coordinate(lat: 39.10, lng: -84.51);
+
+      const mockCommute = CommuteCheckResult(
+        success: true,
+        isClear: true,
+        status: 'clear',
+        summary: RouteCheckSummary(
+          totalHazards: 0,
+          incidentsCount: 0,
+          slowdownsCount: 0,
+          constructionCount: 0,
+          message: 'Route clear',
+        ),
+        route: CommuteRoute(
+          totalDistanceMiles: 108.0,
+          totalDurationSeconds: 6400,
+          start: start,
+          end: end,
+          coordinates: [start, end],
+        ),
+        corridorBufferMiles: 0.31,
+        hazards: [],
+      );
+
+      blocTest<RoutingBloc, RoutingState>(
+        'emits [CommuteCheckLoading, CommuteCheckLoaded] on success',
+        build: () {
+          when(
+            () => mockRepository.checkCommuteRoute(
+              start: any(named: 'start'),
+              end: any(named: 'end'),
+              polyline: any(named: 'polyline'),
+              bufferMiles: any(named: 'bufferMiles'),
+            ),
+          ).thenAnswer((_) async => mockCommute);
+          return RoutingBloc(routingRepository: mockRepository);
+        },
+        act: (bloc) => bloc.add(
+          const CommuteCheckRequested(start: start, end: end),
+        ),
+        expect: () => [
+          isA<CommuteCheckLoading>(),
+          isA<CommuteCheckLoaded>().having(
+            (s) => s.commuteResult.isClear,
+            'isClear',
+            isTrue,
+          ),
+        ],
+      );
+
+      blocTest<RoutingBloc, RoutingState>(
+        'emits [CommuteCheckLoading, CommuteCheckError] on failure',
+        build: () {
+          when(
+            () => mockRepository.checkCommuteRoute(
+              start: any(named: 'start'),
+              end: any(named: 'end'),
+              polyline: any(named: 'polyline'),
+              bufferMiles: any(named: 'bufferMiles'),
+            ),
+          ).thenThrow(Exception('Backend network timeout'));
+          return RoutingBloc(routingRepository: mockRepository);
+        },
+        act: (bloc) => bloc.add(
+          const CommuteCheckRequested(start: start, end: end),
+        ),
+        expect: () => [
+          isA<CommuteCheckLoading>(),
+          isA<CommuteCheckError>().having(
+            (s) => s.message,
+            'message',
+            contains('Backend network timeout'),
+          ),
+        ],
+      );
+
+      blocTest<RoutingBloc, RoutingState>(
+        'ClearCommuteRequested resets to RoutingInitial when empty',
+        build: () => RoutingBloc(routingRepository: mockRepository),
+        seed: () => const CommuteCheckLoaded(commuteResult: mockCommute),
+        act: (bloc) => bloc.add(const ClearCommuteRequested()),
+        expect: () => [
+          const RoutingInitial(),
         ],
       );
     });
