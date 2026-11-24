@@ -17,7 +17,7 @@ import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_state.dart';
 import 'package:route_88/features/routing/bloc/routing_bloc.dart';
 import 'package:route_88/features/routing/bloc/routing_state.dart';
 import 'package:route_88/features/routing/models/commute_check_result.dart';
-
+import 'package:route_88/core/settings/app_settings.dart';
 class MapPage extends StatefulWidget {
   const MapPage({
     super.key,
@@ -42,13 +42,30 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+  class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
 
-  bool showIncidents = true;
-  bool showSlowdowns = true;
-  bool showConstruction = true;
+  bool get showIncidents => AppSettings.instance.showIncidents;
+  bool get showSlowdowns => AppSettings.instance.showSlowdowns;
+  bool get showConstruction => AppSettings.instance.showConstruction;
 
+  @override
+  void initState() {
+    super.initState();
+    AppSettings.instance.addListener(_updateSettings);
+  }
+
+  void _updateSettings() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    AppSettings.instance.removeListener(_updateSettings);
+    _mapController.dispose();
+    super.dispose();
+  }
+  
   @override
   void didUpdateWidget(MapPage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -366,11 +383,10 @@ class _MapPageState extends State<MapPage> {
                         required showIncidents,
                         required showSlowdowns,
                       }) {
-                        setState(() {
-                          this.showIncidents = showIncidents;
-                          this.showSlowdowns = showSlowdowns;
-                          this.showConstruction = showConstruction;
-                        });
+                          AppSettings.instance.setShowIncidents(showIncidents);
+                          AppSettings.instance.setShowSlowdowns(showSlowdowns);
+                          AppSettings.instance.setShowConstruction(showConstruction);
+                        
                       },
                     );
                   },

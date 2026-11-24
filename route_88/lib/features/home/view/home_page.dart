@@ -3,25 +3,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:route_88/core/settings/app_settings.dart';
 import 'package:route_88/core/utils/location_service.dart';
-
 import 'package:route_88/features/home/utils/map_theme.dart';
 import 'package:route_88/features/home/view/incidents_page.dart';
 import 'package:route_88/features/home/view/map_page.dart';
 import 'package:route_88/features/home/view/settings_page.dart';
-
 import 'package:route_88/features/route88/bloc/construction/construction_bloc.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_event.dart';
 import 'package:route_88/features/route88/bloc/construction/construction_state.dart';
-
 import 'package:route_88/features/route88/bloc/incidents/incidents_bloc.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_event.dart';
 import 'package:route_88/features/route88/bloc/incidents/incidents_state.dart';
-
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_bloc.dart';
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_event.dart';
 import 'package:route_88/features/route88/bloc/slowdowns/slowdowns_state.dart';
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -32,7 +28,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   static const double defaultLat = 39.9612;
   static const double defaultLon = -83.0019;
-  static const double searchRadius = 50;
+  
+  double _lastRadius = AppSettings.instance.searchRadius;
+  String _lastServer = AppSettings.instance.serverUrl;
+
 
   final LocationService _locationService = const LocationService();
 
@@ -43,11 +42,35 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    AppSettings.instance.addListener(_onSettingsChanged);
     _fetchTrafficData(_currentLat, _currentLon);
     unawaited(_resolveUserLocation());
   }
 
+
+void _onSettingsChanged() {
+  final settings = AppSettings.instance;
+
+  if (_lastRadius != settings.searchRadius ||
+      _lastServer != settings.serverUrl) {
+    _lastRadius = settings.searchRadius;
+    _lastServer = settings.serverUrl;
+
+    _fetchTrafficData(_currentLat, _currentLon);
+  }
+
+  setState(() {});
+}
+
+@override
+void dispose() {
+  AppSettings.instance.removeListener(_onSettingsChanged);
+  super.dispose();
+}
+
+
   void _fetchTrafficData(double lat, double lon) {
+    final searchRadius = AppSettings.instance.searchRadius;
     context.read<IncidentsBloc>().add(
       IncidentsRequested(
         latitude: lat,
@@ -111,6 +134,7 @@ class _HomePageState extends State<HomePage> {
               width: double.infinity,
               color: const Color(0xFFE1E6EB),
               child: MapPage(
+                searchRadiusMiles: AppSettings.instance.searchRadius,
                 searchCenterLatitude: _currentLat,
                 searchCenterLongitude: _currentLon,
                 onLocationRefreshRequested: _resolveUserLocation,
