@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:route_88/features/routing/models/commute_check_result.dart';
 import 'package:route_88/features/routing/models/place.dart';
 import 'package:route_88/features/routing/models/route_result.dart';
 
@@ -7,6 +8,7 @@ sealed class RoutingState extends Equatable {
 
   RouteResult? get route => null;
   List<Place> get places => const [];
+  CommuteCheckResult? get commuteResult => null;
 
   @override
   List<Object?> get props => [];
@@ -86,6 +88,52 @@ class RouteCalculated extends RouteCalculationState {
   List<Object?> get props => [route, places];
 }
 
+sealed class CommuteCheckState extends RoutingState {
+  const CommuteCheckState();
+}
+
+class CommuteCheckLoading extends CommuteCheckState {
+  const CommuteCheckLoading({
+    this.places = const [],
+    this.route,
+    this.previousCommuteResult,
+  });
+
+  @override
+  final List<Place> places;
+
+  @override
+  final RouteResult? route;
+
+  final CommuteCheckResult? previousCommuteResult;
+
+  @override
+  CommuteCheckResult? get commuteResult => previousCommuteResult;
+
+  @override
+  List<Object?> get props => [places, route, previousCommuteResult];
+}
+
+class CommuteCheckLoaded extends CommuteCheckState {
+  const CommuteCheckLoaded({
+    required this.commuteResult,
+    this.places = const [],
+    this.route,
+  });
+
+  @override
+  final CommuteCheckResult commuteResult;
+
+  @override
+  final List<Place> places;
+
+  @override
+  final RouteResult? route;
+
+  @override
+  List<Object?> get props => [commuteResult, places, route];
+}
+
 class RoutingError extends RoutingState {
   const RoutingError(this.message);
 
@@ -101,4 +149,8 @@ class AutoCompleteError extends RoutingError {
 
 class RouteCalculationError extends RoutingError {
   const RouteCalculationError(super.message);
+}
+
+class CommuteCheckError extends RoutingError {
+  const CommuteCheckError(super.message);
 }
